@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AI Voice Changer Sounds</string>
+    <string name="title_voice_ai">Voice AI</string>
+    <string name="title_text_to_voice">Text to Voice</string>
+    <string name="title_record_audio">Record Audio</string>
+    <string name="title_audio_player">Audio Player</string>
+    <string name="hint_enter_text">Type the text you want to convert...</string>
+    <string name="label_select_language">Select Language</string>
+    <string name="label_select_voice">Select AI Voice</string>
+    <string name="btn_generate">Generate Audio</string>
+    <string name="btn_play">Play</string>
+    <string name="btn_pause">Pause</string>
+    <string name="btn_replay">Replay</string>
+    <string name="error_no_text">Please enter text</string>
+    <string name="error_no_voice">Please select a voice</string>
+    <string name="error_no_language">Please select a language</string>
+</resources>
