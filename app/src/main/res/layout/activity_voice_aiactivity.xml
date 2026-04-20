@@ -1,143 +1,167 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@color/background">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/card_background"
-        app:title="Voice AI"
-        app:titleTextColor="@color/text_primary"
-        app:navigationIconTint="@color/text_primary" />
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="true">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <!-- Text Input Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Enter Text"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:layout_marginBottom="8dp" />
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                app:hintTextColor="@color/text_secondary">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editTextInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Type the text you want to convert..."
-                    android:inputType="textMultiLine"
-                    android:minLines="3"
-                    android:maxLines="6"
-                    android:gravity="top" />
-
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Language Selection -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Select Language"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:layout_marginBottom="8dp" />
-
-            <Spinner
-                android:id="@+id/spinnerLanguage"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:background="@drawable/bg_spinner"
-                android:padding="12dp"
-                android:textColor="@color/text_primary" />
-
-            <!-- AI Voice Selection -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Select AI Voice"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:layout_marginBottom="8dp" />
-
-            <ProgressBar
-                android:id="@+id/progressBarVoices"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/textViewVoicesError"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@color/error"
-                android:textSize="14sp"
-                android:gravity="center"
-                android:padding="16dp"
-                android:visibility="gone" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewVoices"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
-                android:visibility="gone" />
-
-        </LinearLayout>
-
-    </ScrollView>
-
-    <!-- Generate Button + Progress at bottom -->
-    <LinearLayout
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbarAIVoice"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:background="@color/card_background">
+        app:layout_constraintTop_toTopOf="parent">
 
-        <ProgressBar
-            android:id="@+id/progressBarGenerate"
+        <ImageButton
+            android:id="@+id/backarrow"
+            android:layout_width="20dp"
+            android:layout_height="15dp"
+            android:src="@drawable/ic_backarrow__2_"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:backgroundTint="@android:color/transparent"/>
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="8dp"
-            android:visibility="gone" />
+            android:text="Ai Voice"
+            android:textSize="16sp"
+            android:textColor="@color/black"
+            android:fontFamily="@font/outfitmedium"
+            android:layout_marginStart="30dp"/>
+    </androidx.appcompat.widget.Toolbar>
 
-        <Button
-            android:id="@+id/buttonGenerate"
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nestedscrollaivoice"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@+id/toolbarAIVoice"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Generate Audio"
-            android:textSize="16sp"
-            android:padding="14dp"
-            style="@style/Widget.MaterialComponents.Button" />
+            android:padding="15dp">
 
-    </LinearLayout>
+            <TextView
+                android:id="@+id/T1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enter Text"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:fontFamily="@font/outfitmedium"
+                app:layout_constraintTop_toTopOf="parent"/>
 
-</LinearLayout>
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/editconstraint"
+                android:layout_width="match_parent"
+                android:layout_height="165dp"
+                android:background="@drawable/constraint_background2"
+                android:layout_marginTop="15dp"
+                app:layout_constraintTop_toBottomOf="@+id/T1">
+
+                <EditText
+                    android:id="@+id/TtoChange"
+                    android:layout_width="match_parent"
+                    android:layout_height="125dp"
+                    android:hint="You can type words, sentences, or scripts"
+                    android:background="@android:color/transparent"
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine"
+                    android:padding="15dp"
+                    android:textColor="@color/black"
+                    app:layout_constraintTop_toTopOf="parent"/>
+
+                <LinearLayout
+                    android:id="@+id/langselection"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    app:layout_constraintBottom_toBottomOf="parent">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_language"
+                        android:layout_marginStart="15dp"/>
+
+                    <TextView
+                        android:id="@+id/selectedlang"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Language: English"
+                        android:layout_marginStart="8dp"
+                        android:textSize="14sp"
+                        android:textColor="@color/accent"/>
+
+                    <!-- Spacer pushes the next view to the end -->
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
+
+                    <TextView
+                        android:id="@+id/charCounter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingEnd="15dp"
+                        android:text="0/99"
+                        android:textColor="#757575"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <LinearLayout
+                android:id="@+id/btnGenerateVoice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_linearlayout"
+                android:enabled="false"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:layout_marginTop="15dp"
+                app:layout_constraintTop_toBottomOf="@+id/editconstraint">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Generate Voice"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Watch an ad"
+                    android:textColor="#E0E0E0"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/T2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Choose Ai Voice"
+                android:textSize="14sp"
+                android:fontFamily="@font/outfitsemibold"
+                android:textColor="@color/black"
+                android:layout_marginTop="20dp"
+                app:layout_constraintTop_toBottomOf="@+id/btnGenerateVoice"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvVoices"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:nestedScrollingEnabled="false"
+                app:layout_constraintTop_toBottomOf="@+id/T2"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

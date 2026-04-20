@@ -18,15 +18,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
-        binding.cardVoiceAI.setOnClickListener {
+        binding.cardvoicechange.setOnClickListener {
             startActivity(Intent(this, VoiceAIActivity::class.java))
         }
 
-        binding.cardTextToVoice.setOnClickListener {
+        binding.cardttv.setOnClickListener {
             // TODO: Implement Text to Voice screen
         }
 
-        binding.cardRecordAudio.setOnClickListener {
+        binding.cardrav.setOnClickListener {
             // TODO: Implement Record Audio screen
         }
     }

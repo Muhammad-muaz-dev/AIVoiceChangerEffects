@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_margin="4dp"
     android:background="@drawable/bg_voice_item"
     android:foreground="?attr/selectableItemBackground"
@@ -10,10 +11,14 @@
     android:padding="8dp">
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:gravity="center">
+        android:gravity="center"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent="1">
 
         <!-- Avatar (visible) -->
         <ImageView
@@ -31,7 +36,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:textSize="11sp"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/black"
             android:gravity="center"
             android:maxLines="2"
             android:ellipsize="end" />
@@ -59,12 +64,4 @@
 
     </LinearLayout>
 
-    <!-- Selection overlay (shown when selected) -->
-    <View
-        android:id="@+id/viewSelectionOverlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/bg_voice_selected"
-        android:visibility="gone" />
-
-</FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

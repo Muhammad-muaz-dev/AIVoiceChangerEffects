@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="@color/voice_selected_overlay" />
-    <corners android:radius="8dp" />
-</shape>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- When Selected -->
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent"/>
+            <stroke
+                android:width="2dp"
+                android:color="@color/accent"/>  <!-- Your blue color -->
+            <corners android:radius="12dp"/>
+        </shape>
+    </item>
+
+</selector>

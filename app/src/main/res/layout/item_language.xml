@@ -1,0 +1,31 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="14dp">
+
+    <!-- FLAG -->
+    <ImageView
+        android:id="@+id/imgFlag"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@drawable/flagus"/>
+
+    <!-- NAME -->
+    <TextView
+        android:id="@+id/tvLanguage"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:text="English"
+        android:textSize="16sp"/>
+
+    <!-- RADIO -->
+    <RadioButton
+        android:id="@+id/radioSelect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>

@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.implementation
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -72,7 +74,8 @@ dependencies {
 
     // RecyclerView
     implementation("androidx.recyclerview:recyclerview:1.3.2")
-
+    implementation("com.github.massoudss:waveformSeekBar:5.0.2")
+    implementation("com.airbnb.android:lottie:6.4.0")
     // Glide (image loading for avatars)
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation(libs.androidx.activity)

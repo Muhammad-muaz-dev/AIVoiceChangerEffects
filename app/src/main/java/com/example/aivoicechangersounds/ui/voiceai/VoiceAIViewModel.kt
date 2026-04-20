@@ -41,7 +41,6 @@ class VoiceAIViewModel(private val repository: VoiceRepository) : ViewModel() {
         Language("ko", "Korean"),
         Language("ru", "Russian")
     )
-
     fun loadVoices(language: String? = null) {
         viewModelScope.launch {
             _voices.value = Resource.Loading

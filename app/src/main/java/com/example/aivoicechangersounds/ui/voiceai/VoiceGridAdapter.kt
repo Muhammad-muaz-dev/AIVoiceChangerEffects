@@ -57,8 +57,6 @@ class VoiceGridAdapter(
 
             // Visual selection state
             binding.root.isSelected = isSelected
-            binding.viewSelectionOverlay.visibility =
-                if (isSelected) android.view.View.VISIBLE else android.view.View.GONE
 
             binding.root.setOnClickListener {
                 onVoiceSelected(voice)
