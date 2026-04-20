@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/bg_bottom_sheet2"
+    android:gravity="center_horizontal">
+
+    <!-- Tick Animation -->
+    <ImageView
+        android:id="@+id/imgTick"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="12dp"
+        android:contentDescription="Success"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save to My Files!"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginTop="12dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="AUD-2025_43897509"
+        android:layout_marginTop="4dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnShare"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="@color/LightTheme"
+        android:text="Share File"
+        android:textColor="@color/black"
+        app:cornerRadius="12dp"
+        app:icon="@drawable/ic_share"
+        app:iconSize="20dp"
+        app:iconGravity="textStart"
+        app:iconTint="@color/black"
+        app:strokeColor="@color/accent"
+        app:strokeWidth="2dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDone"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Done"
+        android:layout_marginTop="12dp"
+        android:backgroundTint="@color/purple_500"
+        app:cornerRadius="12dp"/>
+
+</LinearLayout>

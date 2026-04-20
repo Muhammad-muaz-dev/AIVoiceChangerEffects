@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:background="@color/background">
 
-    <Toolbar
+    <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbaraudioplayer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -28,7 +28,7 @@
             android:text="Preview"
             android:textColor="@color/black"
             android:textSize="16sp" />
-    </Toolbar>
+    </androidx.appcompat.widget.Toolbar>
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/nsaudioplayer"
@@ -46,70 +46,201 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <!-- Voice and Text Info -->
+            <TextView
+                android:id="@+id/textViewVoiceName"
                 android:layout_width="match_parent"
-                android:layout_height="138dp"
-                android:background="@drawable/bg_const"
-                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_height="wrap_content"
+                android:text="Voice Name"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginTop="10dp"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"/>
 
-                <LinearLayout
-                    android:id="@+id/LinearLayout"
+            <TextView
+                android:id="@+id/textViewInputText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Input text"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:layout_marginTop="5dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textViewVoiceName"/>
+
+            <!-- Loading/Error States -->
+            <ProgressBar
+                android:id="@+id/progressBarLoading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+            <TextView
+                android:id="@+id/textViewError"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Error message"
+                android:textColor="@color/red"
+                android:visibility="gone"
+                android:gravity="center"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"/>
+
+            <!-- Audio Controls -->
+            <LinearLayout
+                android:id="@+id/layoutControls"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginTop="20dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textViewInputText">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/consta"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="15dp"
-                    android:orientation="horizontal"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent">
+                    android:layout_height="138dp"
+                    android:background="@drawable/bg_const">
 
-                    <ImageButton
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:layout_gravity="center"
-                        android:layout_marginLeft="10dp"
-                        android:backgroundTint="@android:color/transparent"
-                        android:src="@drawable/ic_playbutton" />
-
-                    <SeekBar
-                        android:id="@+id/audioSeekBar"
-                        android:layout_width="0dp"
+                    <LinearLayout
+                        android:id="@+id/LinearLayout"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:layout_weight="1"
+                        android:layout_margin="15dp"
+                        android:orientation="horizontal"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
 
-                        android:progressBackgroundTint="@color/sandcolor"
-                        android:progressTint="@color/accent"
-                        android:thumbTint="@color/white" />
+                        <ImageButton
+                            android:id="@+id/buttonReplay"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_gravity="center"
+                            android:layout_marginLeft="10dp"
+                            android:backgroundTint="@android:color/transparent"
+                            android:src="@drawable/ic_playbutton" />
 
-                    <ImageButton
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
+                        <SeekBar
+                            android:id="@+id/seekBar"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:layout_weight="1"
+                            android:progressBackgroundTint="@color/sandcolor"
+                            android:progressTint="@color/accent"
+                            android:thumbTint="@color/white" />
+
+                        <ImageButton
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginRight="10dp"
+                            android:backgroundTint="@android:color/transparent"
+                            android:src="@drawable/ic_volumebutton" />
+
+                    </LinearLayout>
+
+                    <!-- Time Display -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginHorizontal="20dp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/LinearLayout">
+
+                        <TextView
+                            android:id="@+id/textViewCurrentTime"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="00:00"
+                            android:textSize="12sp"
+                            android:textColor="@color/black"/>
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1"/>
+
+                        <TextView
+                            android:id="@+id/textViewTotalTime"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="00:00"
+                            android:textSize="12sp"
+                            android:textColor="@color/black"/>
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/lottieView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
                         android:layout_marginRight="10dp"
-                        android:backgroundTint="@android:color/transparent"
-                        android:src="@drawable/ic_volumebutton" />
+                        android:layout_marginLeft="10dp"
+                        android:src="@drawable/ic_wave"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/LinearLayout"
+                        app:layout_constraintBottom_toBottomOf="parent"/>
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
-                </LinearLayout>
-                <com.airbnb.lottie.LottieAnimationView
-                    android:id="@+id/lottieView"
+                <!-- Play/Pause Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonPlayPause"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:lottie_fileName="animation.json"
-                    android:layout_marginRight="10dp"
-                    android:layout_marginLeft="10dp"
-                    app:lottie_autoPlay="true"
-                    app:lottie_loop="true"
+                    android:layout_height="56dp"
+                    android:text="Play"
+                    android:textColor="@color/white"
+                    android:backgroundTint="@color/purple_500"
+                    app:cornerRadius="12dp"
+                    android:layout_marginTop="20dp"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/LinearLayout"
-                    app:layout_constraintBottom_toBottomOf="parent"/>
-            </androidx.constraintlayout.widget.ConstraintLayout>
+                    app:layout_constraintTop_toBottomOf="@+id/consta"/>
+            </LinearLayout>
+
+            <!-- Save Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnsave"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Save to My Files"
+                android:gravity="center"
+                android:textAllCaps="false"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/ic_file"
+                app:iconGravity="textStart"
+                android:layout_marginTop="20dp"
+                app:iconPadding="8dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/layoutControls"/>
+
             <com.google.android.material.button.MaterialButton
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:drawableLeft="@drawable/ic_file"
-                android:paddingLeft="100dp"/>
+                android:text="Back Home"
+                android:textColor="@color/black"
+                app:strokeColor="@color/accent"
+                app:strokeWidth="2dp"
+                android:layout_marginTop="10dp"
+                app:cornerRadius="12dp"
+                android:backgroundTint="@color/background"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/btnsave"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -15,6 +15,7 @@
     <color name="accent">#6200EE</color>
     <color name="accent_light">#EDE7F6</color>
     <color name="error">#B00020</color>
+    <color name="red">#FF0000</color>
     <color name="voice_selected_overlay">#336200EE</color>
     <color name="skyblue">#5BA9F9</color>
     <color name="lightindigo">#848CF8</color>

@@ -68,16 +68,18 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    //glide
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    ksp ("com.github.bumptech.glide:compiler:4.16.0")
 
     // Gson
     implementation("com.google.code.gson:gson:2.10.1")
 
     // RecyclerView
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+    //seekbar
     implementation("com.github.massoudss:waveformSeekBar:5.0.2")
+    // lottie
     implementation("com.airbnb.android:lottie:6.4.0")
-    // Glide (image loading for avatars)
-    implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation(libs.androidx.activity)
-    ksp("com.github.bumptech.glide:compiler:4.16.0")
 }

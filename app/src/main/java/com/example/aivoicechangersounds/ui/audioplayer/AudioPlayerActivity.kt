@@ -11,6 +11,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.voicechanger.app.databinding.ActivityAudioPlayerBinding
 import java.util.concurrent.TimeUnit
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.voicechanger.app.databinding.DialogueSaveFileBinding
+import com.example.aivoicechangersounds.ui.audioplayer.PlayerState
+import com.example.aivoicechangersounds.ui.audioplayer.AudioPlayerViewModel
 
 class AudioPlayerActivity : AppCompatActivity() {
 
@@ -45,10 +49,10 @@ class AudioPlayerActivity : AppCompatActivity() {
     }
 
     private fun setupToolbar() {
-        setSupportActionBar(binding.toolbar)
+        setSupportActionBar(binding.toolbaraudioplayer)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Audio Player"
-        binding.toolbar.setNavigationOnClickListener { finish() }
+        binding.toolbaraudioplayer.setNavigationOnClickListener { finish() }
     }
 
     private fun setupViewModel() {
@@ -99,6 +103,10 @@ class AudioPlayerActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+
+        binding.btnsave.setOnClickListener {
+            showSaveFileDialog()
+        }
     }
 
     private fun observeViewModel() {
@@ -186,5 +194,43 @@ class AudioPlayerActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         stopProgressUpdates()
+    }
+
+    private fun showSaveFileDialog() {
+        val dialog = BottomSheetDialog(this)
+        val sheetBinding = DialogueSaveFileBinding.inflate(layoutInflater)
+        
+        dialog.setContentView(sheetBinding.root)
+        
+        // Generate unique filename
+        val timestamp = System.currentTimeMillis()
+        val filename = "AUD-${timestamp}"
+        // Update filename display in dialog (the hardcoded text in layout will be replaced dynamically)
+        
+        // Set up tick animation (you can add Lottie animation here)
+        // sheetBinding.imgTick.setImageResource(com.voicechanger.app.R.drawable.ic_tick_success)
+        
+        sheetBinding.btnDone.setOnClickListener {
+            // Save file logic here
+            saveAudioFile(filename)
+            dialog.dismiss()
+        }
+        
+        sheetBinding.btnShare.setOnClickListener {
+            // Share file logic here
+            shareAudioFile(filename)
+        }
+        
+        dialog.show()
+    }
+    
+    private fun saveAudioFile(filename: String) {
+        // Implement file saving logic
+        Toast.makeText(this, "Audio saved as $filename", Toast.LENGTH_SHORT).show()
+    }
+    
+    private fun shareAudioFile(filename: String) {
+        // Implement file sharing logic
+        Toast.makeText(this, "Sharing $filename", Toast.LENGTH_SHORT).show()
     }
 }
