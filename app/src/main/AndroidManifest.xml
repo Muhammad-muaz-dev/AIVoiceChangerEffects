@@ -25,11 +25,13 @@
         <activity
             android:name="com.example.aivoicechangersounds.ui.voiceai.VoiceAIActivity"
             android:exported="false"
+            android:theme="@style/Theme.AIVoiceChanger.NoActionBar"
             android:parentActivityName="com.example.aivoicechangersounds.ui.main.MainActivity" />
 
         <activity
             android:name="com.example.aivoicechangersounds.ui.audioplayer.AudioPlayerActivity"
             android:exported="false"
+            android:theme="@style/Theme.AIVoiceChanger.NoActionBar"
             android:parentActivityName="com.example.aivoicechangersounds.ui.voiceai.VoiceAIActivity" />
 
     </application>

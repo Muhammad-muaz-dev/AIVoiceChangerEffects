@@ -8,8 +8,14 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    // TODO: Replace with your actual backend base URL
+    // Backend API
     private const val BASE_URL = "https://your-backend-url.com/"
+    
+    // Google TTS API
+    private const val GOOGLE_TTS_BASE_URL = "https://texttospeech.googleapis.com/"
+    
+    // OpenAI TTS API
+    private const val OPENAI_BASE_URL = "https://api.openai.com/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -29,5 +35,23 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)
+    }
+    
+    val googleTTSApiService: GoogleTTSApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(GOOGLE_TTS_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(GoogleTTSApiService::class.java)
+    }
+    
+    val openAITTSApiService: OpenAITTSService by lazy {
+        Retrofit.Builder()
+            .baseUrl(OPENAI_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(OpenAITTSService::class.java)
     }
 }

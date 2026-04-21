@@ -7,7 +7,7 @@
     android:background="@color/background">
 
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbarAIVoice"
+        android:id="@+id/toolbarAIVoices"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent">
@@ -34,7 +34,7 @@
         android:id="@+id/nestedscrollaivoice"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@+id/toolbarAIVoice"
+        app:layout_constraintTop_toBottomOf="@+id/toolbarAIVoices"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
