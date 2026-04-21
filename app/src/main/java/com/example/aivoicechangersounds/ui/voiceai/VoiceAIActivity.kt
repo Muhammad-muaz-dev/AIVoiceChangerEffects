@@ -3,26 +3,27 @@ package com.example.aivoicechangersounds.ui.voiceai
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.aivoicechangersounds.data.api.RetrofitClient
-import com.example.aivoicechangersounds.data.repository.OpenAITTSRepository
-import com.example.aivoicechangersounds.data.repository.VoiceRepository
 import com.example.aivoicechangersounds.ui.audioplayer.AudioPlayerActivity
 import com.example.aivoicechangersounds.utils.Resource
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.voicechanger.app.R
 import com.voicechanger.app.databinding.ActivityVoiceAiactivityBinding
 import com.voicechanger.app.databinding.BottomSheetLanguagesBinding
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class VoiceAIActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityVoiceAiactivityBinding
-    private lateinit var viewModel: VoiceAIViewModel
+    private val viewModel: VoiceAIViewModel by viewModels()
     private lateinit var voiceAdapter: VoiceGridAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,7 +32,6 @@ class VoiceAIActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setupToolbar()
-        setupViewModel()
         setupVoiceGrid()
         setupTextWatcher()
         setupLanguageClick()
@@ -48,19 +48,9 @@ class VoiceAIActivity : AppCompatActivity() {
     }
 
     private fun setupToolbar() {
-        setSupportActionBar(binding.toolbarAIVoices)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "Voice AI"
-        binding.toolbarAIVoices.setNavigationOnClickListener {
-            onBackPressedDispatcher.onBackPressed()
-        }
+    binding.backarrow.setOnClickListener {
+        finish()
     }
-
-    private fun setupViewModel() {
-        val voiceRepository = VoiceRepository(RetrofitClient.apiService)
-        val openAITTSRepository = OpenAITTSRepository(RetrofitClient.openAITTSApiService)
-        val factory = VoiceAIViewModelFactory(voiceRepository, openAITTSRepository)
-        viewModel = ViewModelProvider(this, factory)[VoiceAIViewModel::class.java]
     }
 
     private fun setupVoiceGrid() {
@@ -95,25 +85,35 @@ class VoiceAIActivity : AppCompatActivity() {
     private fun showLanguageBottomSheet() {
 
         val dialog = BottomSheetDialog(this)
+
         val sheetBinding = BottomSheetLanguagesBinding.inflate(layoutInflater)
 
         dialog.setContentView(sheetBinding.root)
 
-        val languages = viewModel.availableLanguages
+        // ==================== IMPORTANT FIXES START HERE ====================
+
+        dialog.setOnShowListener { dialogInterface ->
+            val bottomSheetDialog = dialogInterface as BottomSheetDialog
+            val bottomSheet = bottomSheetDialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+
+        }
+
+        // Optional: Make it expanded by default and prevent dragging down from top
+        dialog.behavior.isDraggable = true
+
+        val languagesResource = viewModel.availableLanguages.value
+        val languages = if (languagesResource is Resource.Success) languagesResource.data else emptyList()
 
         val adapter = LanguageAdapter(languages, 0) { selectedLanguage ->
-
-            // Update UI
             binding.selectedlang.text = selectedLanguage.displayName
-
-            // Update ViewModel
             viewModel.selectLanguage(selectedLanguage)
-
             dialog.dismiss()
         }
 
-        sheetBinding.rvLanguages.layoutManager = LinearLayoutManager(this)
-        sheetBinding.rvLanguages.adapter = adapter
+        sheetBinding.rvLanguages.apply {
+            layoutManager = LinearLayoutManager(this@VoiceAIActivity)  // Use correct context
+            this.adapter = adapter
+        }
 
         sheetBinding.btnClose.setOnClickListener {
             dialog.dismiss()

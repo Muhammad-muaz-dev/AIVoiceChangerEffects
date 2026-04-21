@@ -12,8 +12,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class AudioPlayerViewModel : ViewModel() {
+@HiltViewModel
+class AudioPlayerViewModel @Inject constructor() : ViewModel() {
 
     private val _playerState = MutableLiveData<PlayerState>(PlayerState.Idle)
     val playerState: LiveData<PlayerState> = _playerState
@@ -127,6 +130,7 @@ class AudioPlayerViewModel : ViewModel() {
         mediaPlayer = null
         tempFile?.delete()
     }
+
 }
 
 sealed class PlayerState {

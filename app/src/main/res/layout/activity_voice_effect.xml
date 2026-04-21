@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
+    android:background="@color/white">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbarAIVoices"
@@ -23,11 +23,19 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Ai Voice"
+            android:text="Voice Effects"
             android:textSize="20sp"
             android:textColor="@color/black"
             android:fontFamily="@font/outfitbold"
             android:layout_marginStart="30dp"/>
+        <ImageButton
+            android:id="@+id/btnTick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_tick2"
+            android:backgroundTint="@android:color/transparent"
+            android:layout_gravity="end"
+            android:paddingEnd="20dp"/>
     </androidx.appcompat.widget.Toolbar>
 
     <androidx.core.widget.NestedScrollView
@@ -55,91 +63,134 @@
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/editconstraint"
                 android:layout_width="match_parent"
-                android:layout_height="165dp"
-                android:background="@drawable/constraint_background2"
+                android:layout_height="125dp"
                 android:layout_marginTop="15dp"
+                android:background="@drawable/constraint_background"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/T1">
 
-                <EditText
-                    android:id="@+id/TtoChange"
-                    android:layout_width="match_parent"
-                    android:layout_height="125dp"
-                    android:hint="You can type words, sentences, or scripts"
-                    android:background="@android:color/transparent"
-                    android:gravity="top|start"
-                    android:inputType="textMultiLine"
-                    android:padding="15dp"
-                    android:textColor="@color/black"
-                    app:layout_constraintTop_toTopOf="parent"/>
 
                 <LinearLayout
-                    android:id="@+id/langselection"
+                    android:id="@+id/LinearLayout"
                     android:layout_width="match_parent"
-                    android:layout_height="40dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="15dp"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    app:layout_constraintBottom_toBottomOf="parent">
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
 
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_language"
-                        android:layout_marginStart="15dp"/>
+                    <ImageButton
+                        android:id="@+id/buttonReplay"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_gravity="center"
+                        android:layout_marginLeft="10dp"
+                        android:backgroundTint="@android:color/transparent"
+                        android:src="@drawable/ic_playbutton" />
+
+                    <SeekBar
+                        android:id="@+id/seekBar"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_weight="1"
+                        android:progressBackgroundTint="@color/sandcolor"
+                        android:progressTint="@color/accent"
+                        android:thumbTint="@color/white" />
+
+                    <ImageButton
+                        android:id="@+id/btnVolume"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginRight="10dp"
+                        android:backgroundTint="@android:color/transparent"
+                        android:src="@drawable/ic_volumebutton" />
+
+                </LinearLayout>
+
+                <!-- Time Display -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:orientation="horizontal"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/LinearLayout">
 
                     <TextView
-                        android:id="@+id/selectedlang"
+                        android:id="@+id/textViewCurrentTime"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Language: English"
-                        android:layout_marginStart="8dp"
-                        android:textSize="14sp"
-                        android:textColor="@color/accent"/>
+                        android:text="00:00"
+                        android:textColor="@color/black"
+                        android:textSize="12sp" />
 
-                    <!-- Spacer pushes the next view to the end -->
                     <View
                         android:layout_width="0dp"
-                        android:layout_height="0dp"
-                        android:layout_weight="1"/>
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
 
                     <TextView
-                        android:id="@+id/charCounter"
+                        android:id="@+id/textViewTotalTime"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingEnd="15dp"
-                        android:text="0/99"
-                        android:textColor="#757575"
+                        android:text="00:00"
+                        android:textColor="@color/black"
                         android:textSize="12sp" />
                 </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/lottieView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
+                    android:src="@drawable/ic_wave"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/LinearLayout" />
+
+
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <LinearLayout
                 android:id="@+id/btnGenerateVoice"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_linearlayout"
+                android:layout_marginTop="15dp"
+                android:background="@drawable/bg_ll"
                 android:enabled="false"
-                android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:orientation="vertical"
+                android:orientation="horizontal"
                 android:padding="12dp"
-                android:layout_marginTop="15dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/editconstraint">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Generate Voice"
-                    android:textColor="#FFFFFF"
+                    android:text="Voice Effects "
+                    android:textColor="@color/black"
                     android:textSize="18sp"
-                    android:textStyle="bold" />
+                   android:fontFamily="@font/outfitsemibold"/>
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Watch an ad"
-                    android:textColor="#E0E0E0"
-                    android:textSize="13sp" />
+                    android:text="Background Effects"
+                    android:textColor="@color/black"
+                    android:textSize="18sp"
+                    android:fontFamily="@font/outfitsemibold"/>
             </LinearLayout>
 
             <TextView

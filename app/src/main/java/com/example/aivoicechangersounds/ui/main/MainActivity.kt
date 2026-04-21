@@ -3,9 +3,12 @@ package com.example.aivoicechangersounds.ui.main
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.example.aivoicechangersounds.activities.RecordingActivity
 import com.example.aivoicechangersounds.ui.voiceai.VoiceAIActivity
 import com.voicechanger.app.databinding.ActivityMainBinding
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -23,11 +26,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.cardttv.setOnClickListener {
-            // TODO: Implement Text to Voice screen
+           startActivity(Intent(this, VoiceAIActivity::class.java))
         }
 
         binding.cardrav.setOnClickListener {
-            // TODO: Implement Record Audio screen
+            startActivity(Intent(this, RecordingActivity::class.java))
         }
     }
 }

@@ -1,0 +1,183 @@
+package com.example.aivoicechangersounds.recording
+
+import android.media.MediaPlayer
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.aivoicechangersounds.data.models.GenerateVoiceResponse
+import com.example.aivoicechangersounds.data.models.Voice
+import com.example.aivoicechangersounds.data.repository.VoiceEffectRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import java.io.IOException
+
+
+@HiltViewModel
+class VoiceEffectViewModel @Inject constructor(
+    private val voiceEffectRepository: VoiceEffectRepository
+) : ViewModel() {
+
+    // --- Voice list state ---
+    private val _voices = MutableStateFlow<List<Voice>>(emptyList())
+    val voices: StateFlow<List<Voice>> = _voices.asStateFlow()
+
+    private val _voicesLoading = MutableStateFlow(false)
+    val voicesLoading: StateFlow<Boolean> = _voicesLoading.asStateFlow()
+
+    private val _voicesError = MutableStateFlow<String?>(null)
+    val voicesError: StateFlow<String?> = _voicesError.asStateFlow()
+
+    // --- Selected voice ---
+    private val _selectedVoice = MutableStateFlow<Voice?>(null)
+    val selectedVoice: StateFlow<Voice?> = _selectedVoice.asStateFlow()
+
+    // --- Audio playback state ---
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
+
+    private val _currentPosition = MutableStateFlow(0)
+    val currentPosition: StateFlow<Int> = _currentPosition.asStateFlow()
+
+    private val _totalDuration = MutableStateFlow(0)
+    val totalDuration: StateFlow<Int> = _totalDuration.asStateFlow()
+
+    private val _volume = MutableStateFlow(1.0f)
+    val volume: StateFlow<Float> = _volume.asStateFlow()
+
+    // --- Generate voice state ---
+    private val _generating = MutableStateFlow(false)
+    val generating: StateFlow<Boolean> = _generating.asStateFlow()
+
+    private val _generateResult = MutableStateFlow<GenerateVoiceResponse?>(null)
+    val generateResult: StateFlow<GenerateVoiceResponse?> = _generateResult.asStateFlow()
+
+    private val _generateError = MutableStateFlow<String?>(null)
+    val generateError: StateFlow<String?> = _generateError.asStateFlow()
+
+    // --- MediaPlayer ---
+    private var mediaPlayer: MediaPlayer? = null
+    private var audioFilePath: String? = null
+
+    fun setAudioFilePath(path: String) {
+        audioFilePath = path
+        prepareMediaPlayer(path)
+    }
+
+    private fun prepareMediaPlayer(path: String) {
+        releaseMediaPlayer()
+        mediaPlayer = MediaPlayer().apply {
+            try {
+                setDataSource(path)
+                prepare()
+                _totalDuration.value = duration
+                setOnCompletionListener {
+                    _isPlaying.value = false
+                    _currentPosition.value = 0
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun playPauseAudio() {
+        val player = mediaPlayer ?: return
+        if (player.isPlaying) {
+            player.pause()
+            _isPlaying.value = false
+        } else {
+            player.start()
+            _isPlaying.value = true
+        }
+    }
+
+    fun seekTo(position: Int) {
+        mediaPlayer?.seekTo(position)
+        _currentPosition.value = position
+    }
+
+    fun updateProgress() {
+        mediaPlayer?.let { player ->
+            if (player.isPlaying) {
+                _currentPosition.value = player.currentPosition
+            }
+        }
+    }
+
+    fun setVolume(volumeLevel: Float) {
+        val clamped = volumeLevel.coerceIn(0f, 1f)
+        _volume.value = clamped
+        mediaPlayer?.setVolume(clamped, clamped)
+    }
+
+    fun increaseVolume() {
+        setVolume((_volume.value + 0.1f).coerceAtMost(1f))
+    }
+
+    fun decreaseVolume() {
+        setVolume((_volume.value - 0.1f).coerceAtLeast(0f))
+    }
+
+    // --- Voice list ---
+    fun fetchVoices() {
+        viewModelScope.launch {
+            _voicesLoading.value = true
+            _voicesError.value = null
+            val result = voiceEffectRepository.getVoices()
+            result.onSuccess { voiceList ->
+                _voices.value = voiceList
+            }.onFailure { error ->
+                _voicesError.value = error.message ?: "Failed to load voices"
+            }
+            _voicesLoading.value = false
+        }
+    }
+
+    fun selectVoice(voice: Voice) {
+        _selectedVoice.value = voice
+    }
+
+    // --- Generate voice ---
+    fun generateVoiceEffect() {
+        val voice = _selectedVoice.value ?: return
+        val filePath = audioFilePath ?: return
+
+        viewModelScope.launch {
+            _generating.value = true
+            _generateError.value = null
+
+            val result = voiceEffectRepository.generateVoice(voice.id, filePath)
+            result.onSuccess { response ->
+                _generateResult.value = response
+            }.onFailure { error ->
+                _generateError.value = error.message ?: "Failed to generate voice"
+            }
+
+            _generating.value = false
+        }
+    }
+
+    fun clearGenerateResult() {
+        _generateResult.value = null
+        _generateError.value = null
+    }
+
+    private fun releaseMediaPlayer() {
+        mediaPlayer?.apply {
+            if (isPlaying) stop()
+            release()
+        }
+        mediaPlayer = null
+        _isPlaying.value = false
+        _currentPosition.value = 0
+        _totalDuration.value = 0
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        releaseMediaPlayer()
+    }
+}

@@ -4,18 +4,18 @@ package com.example.aivoicechangersounds.ui.audioplayer
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProvider
-import com.voicechanger.app.databinding.ActivityAudioPlayerBinding
-import java.util.concurrent.TimeUnit
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.voicechanger.app.R
+import com.voicechanger.app.databinding.ActivityAudioPlayerBinding
 import com.voicechanger.app.databinding.DialogueSaveFileBinding
-import com.example.aivoicechangersounds.ui.audioplayer.PlayerState
-import com.example.aivoicechangersounds.ui.audioplayer.AudioPlayerViewModel
+import dagger.hilt.android.AndroidEntryPoint
+import java.util.concurrent.TimeUnit
 
+@AndroidEntryPoint
 class AudioPlayerActivity : AppCompatActivity() {
 
     companion object {
@@ -26,7 +26,7 @@ class AudioPlayerActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityAudioPlayerBinding
-    private lateinit var viewModel: AudioPlayerViewModel
+    private val viewModel: AudioPlayerViewModel by viewModels()
 
     private val progressHandler = Handler(Looper.getMainLooper())
     private val progressRunnable = object : Runnable {
@@ -42,7 +42,6 @@ class AudioPlayerActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setupToolbar()
-        setupViewModel()
         loadAudioData()
         setupControls()
         observeViewModel()
@@ -55,15 +54,11 @@ class AudioPlayerActivity : AppCompatActivity() {
         binding.toolbaraudioplayer.setNavigationOnClickListener { finish() }
     }
 
-    private fun setupViewModel() {
-        viewModel = ViewModelProvider(this)[AudioPlayerViewModel::class.java]
-    }
-
     private fun loadAudioData() {
         val voiceName = intent.getStringExtra(EXTRA_VOICE_NAME) ?: ""
         val inputText = intent.getStringExtra(EXTRA_INPUT_TEXT) ?: ""
         binding.textViewVoiceName.text = voiceName
-        binding.textViewInputText.text = inputText
+        binding.textViewVoiceId.text = inputText
 
         val audioUrl = intent.getStringExtra(EXTRA_AUDIO_URL)
         val audioBase64 = intent.getStringExtra(EXTRA_AUDIO_BASE64)
@@ -79,7 +74,7 @@ class AudioPlayerActivity : AppCompatActivity() {
     }
 
     private fun setupControls() {
-        binding.buttonPlayPause.setOnClickListener {
+        binding.buttonReplay.setOnClickListener {
             when (viewModel.playerState.value) {
                 is PlayerState.Playing -> viewModel.pause()
                 is PlayerState.Paused,
@@ -112,43 +107,27 @@ class AudioPlayerActivity : AppCompatActivity() {
     private fun observeViewModel() {
         viewModel.playerState.observe(this) { state ->
             when (state) {
-                is PlayerState.Idle -> {
-                    binding.progressBarLoading.visibility = View.VISIBLE
-                    binding.layoutControls.visibility = View.GONE
-                    binding.textViewError.visibility = View.GONE
-                }
-                is PlayerState.Loading -> {
-                    binding.progressBarLoading.visibility = View.VISIBLE
-                    binding.layoutControls.visibility = View.GONE
-                    binding.textViewError.visibility = View.GONE
-                }
                 is PlayerState.Ready -> {
-                    binding.progressBarLoading.visibility = View.GONE
-                    binding.layoutControls.visibility = View.VISIBLE
-                    binding.textViewError.visibility = View.GONE
-                    binding.buttonPlayPause.text = "Play"
+                    binding.buttonReplay
                     viewModel.play()
                 }
                 is PlayerState.Playing -> {
-                    binding.progressBarLoading.visibility = View.GONE
-                    binding.layoutControls.visibility = View.VISIBLE
-                    binding.textViewError.visibility = View.GONE
-                    binding.buttonPlayPause.text = "Pause"
+                    binding.buttonReplay.setImageResource(R.drawable.ic_pause)
                     startProgressUpdates()
                 }
                 is PlayerState.Paused -> {
-                    binding.buttonPlayPause.text = "Play"
+                    binding.buttonReplay.setImageResource(R.drawable.ic_playbutton)
                     stopProgressUpdates()
                 }
                 is PlayerState.Completed -> {
-                    binding.buttonPlayPause.text = "Play"
+                    binding.buttonReplay.setImageResource(R.drawable.ic_playbutton)
                     stopProgressUpdates()
                 }
                 is PlayerState.Error -> {
-                    binding.progressBarLoading.visibility = View.GONE
-                    binding.layoutControls.visibility = View.GONE
-                    binding.textViewError.visibility = View.VISIBLE
-                    binding.textViewError.text = state.message
+                    Toast.makeText(this, state.message, Toast.LENGTH_LONG).show()
+                    stopProgressUpdates()
+                }
+                else -> {
                     stopProgressUpdates()
                 }
             }
@@ -199,38 +178,32 @@ class AudioPlayerActivity : AppCompatActivity() {
     private fun showSaveFileDialog() {
         val dialog = BottomSheetDialog(this)
         val sheetBinding = DialogueSaveFileBinding.inflate(layoutInflater)
-        
         dialog.setContentView(sheetBinding.root)
-        
-        // Generate unique filename
+
         val timestamp = System.currentTimeMillis()
-        val filename = "AUD-${timestamp}"
-        // Update filename display in dialog (the hardcoded text in layout will be replaced dynamically)
-        
-        // Set up tick animation (you can add Lottie animation here)
-        // sheetBinding.imgTick.setImageResource(com.voicechanger.app.R.drawable.ic_tick_success)
-        
+        val filename = "AUD-$timestamp"
+
         sheetBinding.btnDone.setOnClickListener {
-            // Save file logic here
             saveAudioFile(filename)
             dialog.dismiss()
         }
-        
+
         sheetBinding.btnShare.setOnClickListener {
-            // Share file logic here
             shareAudioFile(filename)
         }
-        
+
         dialog.show()
     }
-    
+
     private fun saveAudioFile(filename: String) {
-        // Implement file saving logic
         Toast.makeText(this, "Audio saved as $filename", Toast.LENGTH_SHORT).show()
     }
-    
+
     private fun shareAudioFile(filename: String) {
-        // Implement file sharing logic
-        Toast.makeText(this, "Sharing $filename", Toast.LENGTH_SHORT).show()
+        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "audio/*"
+            putExtra(android.content.Intent.EXTRA_TEXT, "Check out my voice effect!")
+        }
+        startActivity(android.content.Intent.createChooser(shareIntent, "Share via"))
     }
 }

@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/background">
+    android:background="@color/white">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbaraudioplayer"
@@ -46,72 +46,15 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <!-- Voice and Text Info -->
-            <TextView
-                android:id="@+id/textViewVoiceName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Voice Name"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/black"
-                android:layout_marginTop="10dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"/>
-
-            <TextView
-                android:id="@+id/textViewInputText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Input text"
-                android:textSize="14sp"
-                android:textColor="@color/black"
-                android:layout_marginTop="5dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/textViewVoiceName"/>
-
-            <!-- Loading/Error States -->
-            <ProgressBar
-                android:id="@+id/progressBarLoading"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:visibility="gone"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"/>
-
-            <TextView
-                android:id="@+id/textViewError"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Error message"
-                android:textColor="@color/red"
-                android:visibility="gone"
-                android:gravity="center"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"/>
-
-            <!-- Audio Controls -->
-            <LinearLayout
-                android:id="@+id/layoutControls"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone"
-                android:layout_marginTop="20dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/textViewInputText">
 
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/consta"
                     android:layout_width="match_parent"
                     android:layout_height="138dp"
-                    android:background="@drawable/bg_const">
+                    android:background="@drawable/bg_const"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
 
                     <LinearLayout
                         android:id="@+id/LinearLayout"
@@ -196,20 +139,6 @@
                         app:layout_constraintBottom_toBottomOf="parent"/>
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
-                <!-- Play/Pause Button -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/buttonPlayPause"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:text="Play"
-                    android:textColor="@color/white"
-                    android:backgroundTint="@color/purple_500"
-                    app:cornerRadius="12dp"
-                    android:layout_marginTop="20dp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/consta"/>
-            </LinearLayout>
 
             <!-- Save Button -->
             <com.google.android.material.button.MaterialButton
@@ -226,9 +155,10 @@
                 app:iconPadding="8dp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/layoutControls"/>
+               app:layout_constraintTop_toBottomOf="@+id/consta"/>
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnback"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Back Home"
@@ -241,6 +171,24 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/btnsave"/>
+            <TextView
+                android:id="@+id/textViewVoiceName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/btnback"
+                android:visibility="gone"/>
+            <TextView
+                android:id="@+id/textViewVoiceId"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textViewVoiceName"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
+
     </androidx.core.widget.NestedScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

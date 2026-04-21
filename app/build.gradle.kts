@@ -74,6 +74,8 @@ dependencies {
 
     // Gson
     implementation("com.google.code.gson:gson:2.10.1")
+    //circle image view
+    implementation("de.hdodenhof:circleimageview:3.1.0")
 
     // RecyclerView
     implementation("androidx.recyclerview:recyclerview:1.3.2")
