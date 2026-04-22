@@ -9,8 +9,8 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     // Backend API
-    private const val BASE_URL = "https://pollux.aspire.pics/api/languages/"
 
+    private val lang_url: String =ApiUrls.Language_Url
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
@@ -31,7 +31,7 @@ object RetrofitClient {
 
     val apiService: ApiService by lazy {
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(lang_url)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

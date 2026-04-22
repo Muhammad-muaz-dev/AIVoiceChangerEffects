@@ -10,6 +10,7 @@ import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
@@ -19,15 +20,19 @@ interface ApiServiceTTS {
 
     @GET("api/voices/free")
     suspend fun getVoices(
-        @Query("language") language: String? = null
-    ): Response<VoicesResponse>
+        @Query("language") language: String? = null,
+        @Header("Authorization") token: String = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc3Njg0MTA4MSwiZXhwIjoxNzc2ODQyODgxfQ.UZjIhbnoC1xCWUSgsKtFRqUljaarHrsZN-CKQFa3oDc"
+
+        ): Response<VoicesResponse>
 
     @GET("api/languages")
-    suspend fun getLanguages(): Response<List<Language>>
+    suspend fun getLanguages(): Response<com.example.aivoicechangersounds.data.models.LanguagesResponse>
 
-    @POST("api/generate-tts")
+    @POST("api/generate")
     suspend fun generateTTS(
+        @Header("Authorization") token: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc3Njg0MTA4MSwiZXhwIjoxNzc2ODQyODgxfQ.UZjIhbnoC1xCWUSgsKtFRqUljaarHrsZN-CKQFa3oDc",
         @Body request: GenerateAudioRequest
+
     ): Response<GenerateAudioResponse>
 
     @Multipart

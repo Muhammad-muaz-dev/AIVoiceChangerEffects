@@ -7,6 +7,7 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
@@ -23,7 +24,8 @@ interface ApiService {
 
     @GET("api/voices/free")
     suspend fun getVoices(
-        @Query("language") language: String? = null
+        @Query("language") language: String? = null,
+        @Header("Authorization") token: String = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc3Njg0MTA4MSwiZXhwIjoxNzc2ODQyODgxfQ.UZjIhbnoC1xCWUSgsKtFRqUljaarHrsZN-CKQFa3oDc"
     ): Response<VoicesResponse>
 
     @GET("api/languages")

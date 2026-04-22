@@ -13,4 +13,6 @@ object ApiUrls {
 
     // If you ever add a second backend just drop it here, e.g.:
     // const val ANALYTICS_BASE_URL = "https://analytics.yourapi.com/v1/"
+    const val Voices_Free="https://pollux.aspire.pics/api/voices/free/"
+    const val Language_Url = "https://pollux.aspire.pics/api/languages/"
 }

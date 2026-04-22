@@ -24,10 +24,10 @@ class VoiceEffectRepository @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val response = apiService.getVoices(language)
-
+                Log.d("Voices coming", "getVoices: $response")
                 if (response.isSuccessful && response.body() != null) {
 
-                    val voices = response.body()!!.data.voices   // ✅ ONLY FIX
+                    val voices = response.body()!!.data.voices
 
                     Log.d("VOICE_DEBUG", "Voices size: ${voices.size}")
 

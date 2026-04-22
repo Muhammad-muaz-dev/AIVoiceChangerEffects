@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
  *
  * Rules:
  * 1. If the interface is annotated with @ApiUrl, that URL is used.
- * 2. Otherwise the defaultApiUrl passed to the constructor is used.
+ * 2. Otherwis the defaultApiUrl passed to the constructor is used.
  *
  * This means every service interface just needs one annotation to
  * point to its own backend – no extra Retrofit/OkHttp setup needed.
