@@ -1,10 +1,8 @@
-package com.example.aivoicechangersounds.ui.main
+package com.example.aivoicechangersounds.activities
 
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.example.aivoicechangersounds.activities.RecordingActivity
-import com.example.aivoicechangersounds.ui.voiceai.VoiceAIActivity
 import com.voicechanger.app.databinding.ActivityMainBinding
 import dagger.hilt.android.AndroidEntryPoint
 

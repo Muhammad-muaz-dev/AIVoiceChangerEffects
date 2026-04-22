@@ -1,7 +1,7 @@
 package com.example.aivoicechangersounds.di
 
 import android.content.Context
-import com.example.aivoicechangersounds.repositories.AudioRecorderRepository
+import com.example.aivoicechangersounds.data.repository.AudioRecorderRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

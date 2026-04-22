@@ -1,67 +1,62 @@
 package com.example.aivoicechangersounds.di
 
-import com.example.aivoicechangersounds.data.api.ApiService
-import com.example.aivoicechangersounds.data.api.ApiServiceTTS
+import com.example.aivoicechangersounds.data.api.interfaces.ApiServiceVoices
+import com.example.aivoicechangersounds.data.api.interfaces.ApiServiceTTS
+import com.example.aivoicechangersounds.data.api.ApiUrls
+import com.example.aivoicechangersounds.data.api.ServiceFactory
+import com.example.aivoicechangersounds.data.api.interfaces.ApiServiceLanguages
+import com.example.aivoicechangersounds.data.api.interfaces.ApiServicesGenerateAudio
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
+/**
+ * Wires up every Retrofit service via Hilt.
+ *
+ * ADDING A NEW SERVICE — only 3 steps:
+ *  1. Create your interface in data/api/ and add @ApiUrl(ApiUrls.YOUR_URL)
+ *  2. Add the URL constant in ApiUrls.kt (if it is a new server)
+ *  3. Add ONE @Provides function below
+ *
+ * Token handling, logging, and timeouts are all handled by ServiceFactory.
+ * You never touch OkHttpClient or Retrofit directly.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "https://pollux.aspire.pics/"
-
+    /** One shared ServiceFactory — one OkHttpClient for the whole app */
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
-        val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
+    fun provideServiceFactory(): ServiceFactory =
+        ServiceFactory(defaultApiUrl = ApiUrls.MAIN_BASE_URL)
 
-        return OkHttpClient.Builder()
-            .addInterceptor { chain ->
-                val request = chain.request().newBuilder()
-                    .header("Accept", "application/json")
-                    .header("User-Agent", "AIVoiceChanger/1.0")
-                    .build()
-                chain.proceed(request)
-            }
-            .addInterceptor(loggingInterceptor)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .build()
-    }
+    // ── Services ──────────────────────────────────────────────────────────────
 
+    /** Speech-to-speech + voices + languages (MAIN_BASE_URL) */
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
+    fun provideApiService(factory: ServiceFactory): ApiServiceVoices =
+        factory.createInstance(ApiServiceVoices::class.java)
 
-    // FIX: was using RetrofitClient.apiService (a separate standalone singleton),
-    // now correctly uses the Hilt-managed Retrofit instance — same client as ApiServiceTTS
+    /** Text-to-speech + voices + languages (TTS_BASE_URL) */
     @Provides
     @Singleton
-    fun provideApiService(retrofit: Retrofit): ApiService {
-        return retrofit.create(ApiService::class.java)
-    }
-
+    fun provideApiServiceTTS(factory: ServiceFactory): ApiServiceTTS =
+        factory.createInstance(ApiServiceTTS::class.java)
     @Provides
     @Singleton
-    fun provideApiServiceTTS(retrofit: Retrofit): ApiServiceTTS {
-        return retrofit.create(ApiServiceTTS::class.java)
-    }
+    fun provideApiServeGenAudio(factory: ServiceFactory): ApiServicesGenerateAudio =
+        factory.createInstance(ApiServicesGenerateAudio::class.java)
+    @Provides
+    @Singleton
+    fun provideApiServeLang(factory: ServiceFactory): ApiServiceLanguages =
+        factory.createInstance(ApiServiceLanguages::class.java)
+
+    // To add a third service later:
+    // @Provides @Singleton
+    // fun provideAnalyticsService(factory: ServiceFactory): AnalyticsService =
+    //     factory.createInstance(AnalyticsService::class.java)
 }

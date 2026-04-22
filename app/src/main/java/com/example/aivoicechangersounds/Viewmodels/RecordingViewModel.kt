@@ -1,9 +1,9 @@
-package com.example.aivoicechangersounds.recording
+package com.example.aivoicechangersounds.Viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aivoicechangersounds.data.models.RecordingState
-import com.example.aivoicechangersounds.repositories.AudioRecorderRepository
+import com.example.aivoicechangersounds.data.repository.AudioRecorderRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job

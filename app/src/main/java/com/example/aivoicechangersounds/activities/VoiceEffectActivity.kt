@@ -16,8 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.aivoicechangersounds.data.models.GenerateVoiceResponse
-import com.example.aivoicechangersounds.recording.VoiceEffectViewModel
-import com.example.aivoicechangersounds.ui.audioplayer.AudioPlayerActivity
+import com.example.aivoicechangersounds.Viewmodels.VoiceEffectViewModel
 import com.example.aivoicechangersounds.ui.voiceai.VoiceGridAdapter
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.voicechanger.app.R

@@ -30,6 +30,30 @@ class AudioPlayerViewModel @Inject constructor() : ViewModel() {
     private var mediaPlayer: MediaPlayer? = null
     private var tempFile: File? = null
 
+    fun initFromFile(path: String) {
+        _playerState.value = PlayerState.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val file = File(path)
+                if (!file.exists()) {
+                    throw Exception("File does not exist")
+                }
+
+                val player = MediaPlayer().apply {
+                    setDataSource(path)
+                    prepare()
+                }
+                withContext(Dispatchers.Main) {
+                    setupMediaPlayer(player)
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _playerState.value = PlayerState.Error("Failed to load audio file: ${e.localizedMessage}")
+                }
+            }
+        }
+    }
+
     fun initFromUrl(url: String) {
         _playerState.value = PlayerState.Loading
         viewModelScope.launch(Dispatchers.IO) {

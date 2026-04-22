@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <solid android:color="@color/sandcolor" />   <!-- or your bottom sheet color -->
+    <solid android:color="@color/white" />   <!-- or your bottom sheet color -->
 
     <!-- This is the most important part -->
     <corners

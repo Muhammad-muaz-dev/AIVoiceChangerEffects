@@ -14,7 +14,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.aivoicechangersounds.data.models.RecordingState
-import com.example.aivoicechangersounds.recording.RecordingViewModel
+import com.example.aivoicechangersounds.Viewmodels.RecordingViewModel
 import com.voicechanger.app.R
 import com.voicechanger.app.databinding.ActivityRecordingBinding
 import dagger.hilt.android.AndroidEntryPoint

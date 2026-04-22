@@ -3,6 +3,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:name="com.example.aivoicechangersounds.androidhilt.Myapp"
@@ -19,7 +21,7 @@
             android:name="com.example.aivoicechangersounds.activities.RecordingActivity"
             android:exported="false" />
         <activity
-            android:name="com.example.aivoicechangersounds.ui.main.MainActivity"
+            android:name="com.example.aivoicechangersounds.activities.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,10 +30,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.example.aivoicechangersounds.ui.voiceai.VoiceAIActivity"
+            android:name="com.example.aivoicechangersounds.activities.VoiceAIActivity"
             android:exported="false" />
         <activity
-            android:name="com.example.aivoicechangersounds.ui.audioplayer.AudioPlayerActivity"
+            android:name="com.example.aivoicechangersounds.activities.AudioPlayerActivity"
             android:exported="false" />
     </application>
 

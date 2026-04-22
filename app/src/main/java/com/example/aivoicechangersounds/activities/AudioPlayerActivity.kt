@@ -1,6 +1,6 @@
-package com.example.aivoicechangersounds.ui.audioplayer
+package com.example.aivoicechangersounds.activities
 
-
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -8,6 +8,8 @@ import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import com.example.aivoicechangersounds.ui.audioplayer.AudioPlayerViewModel
+import com.example.aivoicechangersounds.ui.audioplayer.PlayerState
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.voicechanger.app.R
 import com.voicechanger.app.databinding.ActivityAudioPlayerBinding
@@ -21,6 +23,7 @@ class AudioPlayerActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_AUDIO_URL = "extra_audio_url"
         const val EXTRA_AUDIO_BASE64 = "extra_audio_base64"
+        const val EXTRA_FILE_PATH = "extra_file_path"
         const val EXTRA_VOICE_NAME = "extra_voice_name"
         const val EXTRA_INPUT_TEXT = "extra_input_text"
     }
@@ -62,8 +65,10 @@ class AudioPlayerActivity : AppCompatActivity() {
 
         val audioUrl = intent.getStringExtra(EXTRA_AUDIO_URL)
         val audioBase64 = intent.getStringExtra(EXTRA_AUDIO_BASE64)
+        val filePath = intent.getStringExtra(EXTRA_FILE_PATH)
 
         when {
+            !filePath.isNullOrBlank() -> viewModel.initFromFile(filePath)
             !audioUrl.isNullOrBlank() -> viewModel.initFromUrl(audioUrl)
             !audioBase64.isNullOrBlank() -> viewModel.initFromBase64(audioBase64, cacheDir)
             else -> {
@@ -200,10 +205,10 @@ class AudioPlayerActivity : AppCompatActivity() {
     }
 
     private fun shareAudioFile(filename: String) {
-        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "audio/*"
-            putExtra(android.content.Intent.EXTRA_TEXT, "Check out my voice effect!")
+            putExtra(Intent.EXTRA_TEXT, "Check out my voice effect!")
         }
-        startActivity(android.content.Intent.createChooser(shareIntent, "Share via"))
+        startActivity(Intent.createChooser(shareIntent, "Share via"))
     }
 }

@@ -1,15 +1,14 @@
-package com.example.aivoicechangersounds.repositories
+package com.example.aivoicechangersounds.data.repository
 
 import android.content.Context
 import android.media.MediaRecorder
 import android.os.Build
 import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
 class AudioRecorderRepository @Inject constructor(
@@ -24,7 +23,7 @@ class AudioRecorderRepository @Inject constructor(
             MediaRecorder(context)
         } else {
             @Suppress("DEPRECATION")
-            MediaRecorder()
+            (MediaRecorder())
         }
     }
 
