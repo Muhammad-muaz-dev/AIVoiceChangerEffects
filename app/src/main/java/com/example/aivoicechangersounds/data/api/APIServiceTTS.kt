@@ -4,7 +4,6 @@ import com.example.aivoicechangersounds.data.models.GenerateAudioRequest
 import com.example.aivoicechangersounds.data.models.GenerateAudioResponse
 import com.example.aivoicechangersounds.data.models.GenerateVoiceResponse
 import com.example.aivoicechangersounds.data.models.Language
-import com.example.aivoicechangersounds.data.models.LanguagesResponse
 import com.example.aivoicechangersounds.data.models.VoicesResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -24,7 +23,7 @@ interface ApiServiceTTS {
     ): Response<VoicesResponse>
 
     @GET("api/languages")
-    suspend fun getLanguages(): Response<LanguagesResponse>
+    suspend fun getLanguages(): Response<List<Language>>
 
     @POST("api/generate-tts")
     suspend fun generateTTS(
