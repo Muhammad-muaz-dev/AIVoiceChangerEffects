@@ -1,13 +1,13 @@
 package com.example.aivoicechangersounds.data.repository
 
-
+import android.util.Log
 import com.example.aivoicechangersounds.data.api.ApiServiceTTS
 import com.example.aivoicechangersounds.data.models.GenerateAudioRequest
 import com.example.aivoicechangersounds.data.models.GenerateAudioResponse
 import com.example.aivoicechangersounds.data.models.Language
 import com.example.aivoicechangersounds.data.models.Voice
 import com.example.aivoicechangersounds.utils.Resource
-import jakarta.inject.Inject
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -21,7 +21,9 @@ class VoiceRepository @Inject constructor(
                 val response = apiService.getVoices(language)
 
                 if (response.isSuccessful && response.body() != null) {
-                    Resource.Success(response.body()!!.voices)
+                    val voices = response.body()!!.data.voices
+                    Log.d("VOICE_DEBUG", "Voices size: ${voices.size}")
+                    Resource.Success(voices)
                 } else {
                     Resource.Error("Error: ${response.message()}")
                 }
@@ -38,7 +40,9 @@ class VoiceRepository @Inject constructor(
                 val response = apiService.getLanguages()
 
                 if (response.isSuccessful && response.body() != null) {
-                    Resource.Success(response.body()!!)
+                    val languages = response.body()!!.data.languages
+                    Log.d("VOICE_DEBUG", "Languages size: ${languages.size}")
+                    Resource.Success(languages)
                 } else {
                     Resource.Error("Error: ${response.message()}")
                 }
@@ -54,7 +58,6 @@ class VoiceRepository @Inject constructor(
         voiceId: String,
         language: String
     ): Resource<GenerateAudioResponse> {
-
         return withContext(Dispatchers.IO) {
             try {
                 val response = apiService.generateTTS(

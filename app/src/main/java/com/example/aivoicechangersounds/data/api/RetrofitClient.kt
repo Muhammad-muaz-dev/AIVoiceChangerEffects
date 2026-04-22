@@ -9,13 +9,20 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     // Backend API
-    private const val BASE_URL = "https://your-backend-url.com/"
+    private const val BASE_URL = "https://pollux.aspire.pics/api/languages/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
     private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor { chain ->
+            val request = chain.request().newBuilder()
+                .header("Accept", "application/json")
+                .header("User-Agent", "AIVoiceChanger/1.0")
+                .build()
+            chain.proceed(request)
+        }
         .addInterceptor(loggingInterceptor)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)

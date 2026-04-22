@@ -1,8 +1,10 @@
 package com.example.aivoicechangersounds.data.repository
 
+import android.util.Log
 import com.example.aivoicechangersounds.data.api.ApiService
 import com.example.aivoicechangersounds.data.models.GenerateVoiceResponse
 import com.example.aivoicechangersounds.data.models.Voice
+import com.example.aivoicechangersounds.utils.Resource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -18,28 +20,38 @@ class VoiceEffectRepository @Inject constructor(
     private val apiService: ApiService
 ) {
 
-    suspend fun getVoices(): Result<List<Voice>> = withContext(Dispatchers.IO) {
-        try {
-            val response = apiService.getVoices()
-            if (response.isSuccessful) {
-                val voices = response.body()?.voices ?: emptyList()
-                Result.success(voices)
-            } else {
-                Result.failure(Exception("Failed to fetch voices: ${response.code()} ${response.message()}"))
+    suspend fun getVoices(language: String?): Resource<List<Voice>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getVoices(language)
+
+                if (response.isSuccessful && response.body() != null) {
+
+                    val voices = response.body()!!.data.voices   // ✅ ONLY FIX
+
+                    Log.d("VOICE_DEBUG", "Voices size: ${voices.size}")
+
+                    Resource.Success(voices)
+
+                } else {
+                    Resource.Error("Error: ${response.message()}")
+                }
+
+            } catch (e: Exception) {
+                Resource.Error(e.localizedMessage ?: "Unknown error")
             }
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 
     suspend fun generateVoice(
         voiceId: String,
         audioFilePath: String
-    ): Result<GenerateVoiceResponse> = withContext(Dispatchers.IO) {
+    ): Resource<GenerateVoiceResponse> = withContext(Dispatchers.IO) {
         try {
             val audioFile = File(audioFilePath)
+
             if (!audioFile.exists()) {
-                return@withContext Result.failure(Exception("Audio file not found"))
+                return@withContext Resource.Error("Audio file not found")
             }
 
             val voiceIdBody = voiceId.toRequestBody("text/plain".toMediaTypeOrNull())
@@ -52,18 +64,15 @@ class VoiceEffectRepository @Inject constructor(
             )
 
             val response = apiService.generateAudio(voiceIdBody, audioPart)
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null) {
-                    Result.success(body)
-                } else {
-                    Result.failure(Exception("Empty response from server"))
-                }
+
+            if (response.isSuccessful && response.body() != null) {
+                Resource.Success(response.body()!!)
             } else {
-                Result.failure(Exception("Failed to generate voice: ${response.code()} ${response.message()}"))
+                Resource.Error("Failed: ${response.code()} ${response.message()}")
             }
+
         } catch (e: Exception) {
-            Result.failure(e)
+            Resource.Error(e.localizedMessage ?: "Unknown error")
         }
     }
 }

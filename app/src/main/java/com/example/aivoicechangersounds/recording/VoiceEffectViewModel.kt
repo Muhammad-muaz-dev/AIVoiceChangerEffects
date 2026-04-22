@@ -1,13 +1,15 @@
 package com.example.aivoicechangersounds.recording
 
 import android.media.MediaPlayer
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aivoicechangersounds.data.models.GenerateVoiceResponse
 import com.example.aivoicechangersounds.data.models.Voice
 import com.example.aivoicechangersounds.data.repository.VoiceEffectRepository
+import com.example.aivoicechangersounds.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
-import jakarta.inject.Inject
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -122,16 +124,27 @@ class VoiceEffectViewModel @Inject constructor(
     }
 
     // --- Voice list ---
-    fun fetchVoices() {
+    fun fetchVoices(language: String? = null) {
         viewModelScope.launch {
             _voicesLoading.value = true
             _voicesError.value = null
-            val result = voiceEffectRepository.getVoices()
-            result.onSuccess { voiceList ->
-                _voices.value = voiceList
-            }.onFailure { error ->
-                _voicesError.value = error.message ?: "Failed to load voices"
+
+            val result = voiceEffectRepository.getVoices(language)
+
+            when (result) {
+                is Resource.Success -> {
+                    _voices.value = result.data
+                    Log.d("VoiceEffectViewModelinhg", "fetchVoices Error: ${result.data}")
+                }
+
+                is Resource.Error -> {
+                    _voicesError.value = result.message
+                    Log.d("VoiceEffectViewModelinhg", "fetchVoices Error: ${result.message}")
+                }
+
+                else -> {}
             }
+
             _voicesLoading.value = false
         }
     }
@@ -150,10 +163,17 @@ class VoiceEffectViewModel @Inject constructor(
             _generateError.value = null
 
             val result = voiceEffectRepository.generateVoice(voice.id, filePath)
-            result.onSuccess { response ->
-                _generateResult.value = response
-            }.onFailure { error ->
-                _generateError.value = error.message ?: "Failed to generate voice"
+
+            when (result) {
+                is Resource.Success -> {
+                    _generateResult.value = result.data
+                }
+
+                is Resource.Error -> {
+                    _generateError.value = result.message
+                }
+
+                else -> {}
             }
 
             _generating.value = false

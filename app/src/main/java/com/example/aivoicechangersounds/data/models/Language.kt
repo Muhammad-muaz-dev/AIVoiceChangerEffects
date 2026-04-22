@@ -1,6 +1,8 @@
 package com.example.aivoicechangersounds.data.models
 
+import com.google.gson.annotations.SerializedName
+
 data class Language(
-    val code: String,
-    val displayName: String
+    @SerializedName ("code") val code: String,
+    @SerializedName ("name") val displayName: String
 )

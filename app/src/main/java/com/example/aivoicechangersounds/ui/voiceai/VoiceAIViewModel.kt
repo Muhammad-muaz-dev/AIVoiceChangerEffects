@@ -1,6 +1,5 @@
 package com.example.aivoicechangersounds.ui.voiceai
 
-
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -36,47 +35,69 @@ class VoiceAIViewModel @Inject constructor(
     val availableLanguages: LiveData<Resource<List<Language>>> = _availableLanguages
 
     init {
-        loadLanguages()
+        loadLanguagesAndVoices()
     }
 
-    fun loadLanguages() {
+    /**
+     * Fetches languages then voices in a single coroutine — no nested launches,
+     * no race conditions. The voices call waits for the language result before running.
+     */
+    fun loadLanguagesAndVoices() {
         viewModelScope.launch {
+            // Step 1: load languages
             _availableLanguages.value = Resource.Loading
-            _availableLanguages.value = voiceRepository.getLanguages()
-            
-            // Set default language if available
-            val resource = _availableLanguages.value
-            if (resource is Resource.Success && resource.data.isNotEmpty() && _selectedLanguage.value == null) {
-                selectLanguage(resource.data.first())
+            val langResult = voiceRepository.getLanguages()
+            _availableLanguages.value = langResult
+
+            // Step 2: determine which language code to filter voices by
+            val languageCode: String? = if (langResult is Resource.Success && langResult.data.isNotEmpty()) {
+                // Only set default if user has not already picked one
+                if (_selectedLanguage.value == null) {
+                    _selectedLanguage.value = langResult.data.first()
+                }
+                _selectedLanguage.value?.code
+            } else {
+                if (langResult is Resource.Error) {
+                    Log.e("VoiceAIViewModel", "Languages failed: ${langResult.message}")
+                }
+                null  // fetch all voices as fallback
+            }
+
+            // Step 3: load voices (waits here because it is in the same coroutine)
+            _voices.value = Resource.Loading
+            val voicesResult = voiceRepository.getVoices(languageCode)
+            _voices.value = voicesResult
+
+            if (voicesResult is Resource.Error) {
+                Log.e("VoiceAIViewModel", "Voices failed: ${voicesResult.message}")
             }
         }
     }
 
-    fun loadVoices(language: String? = null) {
+    /**
+     * Called when the user picks a language from the bottom sheet.
+     */
+    fun selectLanguage(language: Language) {
+        _selectedLanguage.value = language
         viewModelScope.launch {
             _voices.value = Resource.Loading
-            _voices.value = voiceRepository.getVoices(language)
+            val result = voiceRepository.getVoices(language.code)
+            _voices.value = result
+            if (result is Resource.Error) {
+                Log.e("VoiceAIViewModel", "Voices failed after lang change: ${result.message}")
+            }
         }
     }
 
     fun selectVoice(voice: Voice) {
-        viewModelScope.launch {
-            _selectedVoice.value = voice
-        }
-    }
-
-    fun selectLanguage(language: Language) {
-        viewModelScope.launch {
-            _selectedLanguage.value = language
-            loadVoices(language.code)
-        }
+        _selectedVoice.value = voice
     }
 
     fun generateAudio(text: String) {
         val voice = _selectedVoice.value
         val language = _selectedLanguage.value
 
-        Log.d("VoiceAIViewModel", "generateAudio called with text: '$text', voice: ${voice?.name}, language: ${language?.displayName}")
+        Log.d("VoiceAIViewModel", "generateAudio: text='$text' voice=${voice?.name} lang=${language?.displayName}")
 
         if (text.isBlank()) {
             _generateResult.value = Resource.Error("Please enter some text")
@@ -85,13 +106,8 @@ class VoiceAIViewModel @Inject constructor(
 
         viewModelScope.launch {
             _generateResult.value = Resource.Loading
-            Log.d("VoiceAIViewModel", "Set loading state")
-            
             val voiceId = voice?.id ?: "1"
             val languageCode = language?.code ?: "en"
-            
-            Log.d("VoiceAIViewModel", "Calling VoiceRepository generateAudio with voiceId: $voiceId, languageCode: $languageCode")
-            
             _generateResult.value = voiceRepository.generateAudio(text, voiceId, languageCode)
         }
     }

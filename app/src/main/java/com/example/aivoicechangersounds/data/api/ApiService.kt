@@ -14,7 +14,7 @@ import retrofit2.http.Query
 
 interface ApiService {
 
-    @GET("api/voices")
+    @GET("api/voices/free")
     suspend fun getVoices(
         @Query("language") language: String? = null
     ): Response<VoicesResponse>

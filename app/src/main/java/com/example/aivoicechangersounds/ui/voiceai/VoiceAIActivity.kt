@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -12,7 +13,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.aivoicechangersounds.ui.audioplayer.AudioPlayerActivity
 import com.example.aivoicechangersounds.utils.Resource
-import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.voicechanger.app.R
 import com.voicechanger.app.databinding.ActivityVoiceAiactivityBinding
@@ -40,100 +40,78 @@ class VoiceAIActivity : AppCompatActivity() {
 
         binding.btnGenerateVoice.isEnabled = false
 
-        viewModel.loadVoices()
-
-        viewModel.generateResult.observe(this) {
-            hideGeneratingDialog()
-        }
+        // NOTE: do NOT call viewModel.loadVoices() here.
+        // The ViewModel's init block calls loadLanguagesAndVoices() which fetches
+        // languages then voices in the correct order inside a single coroutine.
     }
 
     private fun setupToolbar() {
-    binding.backarrow.setOnClickListener {
-        finish()
-    }
+        binding.backarrow.setOnClickListener { finish() }
     }
 
     private fun setupVoiceGrid() {
         voiceAdapter = VoiceGridAdapter { voice ->
             viewModel.selectVoice(voice)
         }
-
         binding.rvVoices.apply {
             layoutManager = GridLayoutManager(this@VoiceAIActivity, 3)
             adapter = voiceAdapter
         }
     }
 
-    //  TEXT WATCHER (ENABLE BUTTON)
     private fun setupTextWatcher() {
         binding.TtoChange.addTextChangedListener {
             val text = it.toString().trim()
-            // Only disable button if not loading, to avoid conflicts with API state
             val isLoading = viewModel.generateResult.value is Resource.Loading
             binding.btnGenerateVoice.isEnabled = text.isNotEmpty() && !isLoading
         }
     }
 
-    //  CLICK → OPEN BOTTOM SHEET
     private fun setupLanguageClick() {
         binding.langselection.setOnClickListener {
             showLanguageBottomSheet()
         }
     }
 
-    //  BOTTOM SHEET
     private fun showLanguageBottomSheet() {
-
-        val dialog = BottomSheetDialog(this)
-
-        val sheetBinding = BottomSheetLanguagesBinding.inflate(layoutInflater)
-
-        dialog.setContentView(sheetBinding.root)
-
-        // ==================== IMPORTANT FIXES START HERE ====================
-
-        dialog.setOnShowListener { dialogInterface ->
-            val bottomSheetDialog = dialogInterface as BottomSheetDialog
-            val bottomSheet = bottomSheetDialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-
-        }
-
-        // Optional: Make it expanded by default and prevent dragging down from top
-        dialog.behavior.isDraggable = true
-
         val languagesResource = viewModel.availableLanguages.value
         val languages = if (languagesResource is Resource.Success) languagesResource.data else emptyList()
 
-        val adapter = LanguageAdapter(languages, 0) { selectedLanguage ->
+        if (languages.isEmpty()) {
+            Toast.makeText(this, "Languages are still loading, please wait…", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val dialog = BottomSheetDialog(this)
+        val sheetBinding = BottomSheetLanguagesBinding.inflate(layoutInflater)
+        dialog.setContentView(sheetBinding.root)
+        dialog.behavior.isDraggable = true
+
+        val currentLang = viewModel.selectedLanguage.value
+        val selectedIndex = languages.indexOfFirst { it.code == currentLang?.code }.coerceAtLeast(0)
+
+        val adapter = LanguageAdapter(languages, selectedIndex) { selectedLanguage ->
             binding.selectedlang.text = selectedLanguage.displayName
             viewModel.selectLanguage(selectedLanguage)
             dialog.dismiss()
         }
 
         sheetBinding.rvLanguages.apply {
-            layoutManager = LinearLayoutManager(this@VoiceAIActivity)  // Use correct context
+            layoutManager = LinearLayoutManager(this@VoiceAIActivity)
             this.adapter = adapter
         }
-
-        sheetBinding.btnClose.setOnClickListener {
-            dialog.dismiss()
-        }
-
+        sheetBinding.btnClose.setOnClickListener { dialog.dismiss() }
         dialog.show()
     }
 
     private fun setupGenerateButton() {
         binding.btnGenerateVoice.setOnClickListener {
             Log.d("VoiceAIActivity", "Generate button clicked")
-            
             val text = binding.TtoChange.text.toString().trim()
-
             if (text.isEmpty()) {
                 binding.TtoChange.error = "Please enter text"
                 return@setOnClickListener
             }
-
-            Log.d("VoiceAIActivity", "Calling generateAudio with text: $text")
             viewModel.generateAudio(text)
         }
     }
@@ -142,49 +120,50 @@ class VoiceAIActivity : AppCompatActivity() {
 
         viewModel.voices.observe(this) { resource ->
             when (resource) {
+                is Resource.Loading -> { /* optional: show spinner */ }
                 is Resource.Success -> {
                     voiceAdapter.submitList(resource.data)
+                    if (resource.data.isEmpty()) {
+                        Toast.makeText(this, "No voices found for this language", Toast.LENGTH_SHORT).show()
+                    }
                 }
-                else -> {}
+                is Resource.Error -> {
+                    Toast.makeText(this, "Could not load voices: ${resource.message}", Toast.LENGTH_LONG).show()
+                }
             }
         }
 
-        viewModel.selectedVoice.observe(this) { selectedVoice ->
-            voiceAdapter.setSelectedVoice(selectedVoice)
+        viewModel.selectedVoice.observe(this) { voice ->
+            voiceAdapter.setSelectedVoice(voice)
         }
-        
-        // Also observe selected language to update layout
-        viewModel.selectedLanguage.observe(this) { selectedLanguage ->
-            selectedLanguage?.let { lang ->
-                binding.selectedlang.text = lang.displayName
+
+        viewModel.selectedLanguage.observe(this) { lang ->
+            lang?.let { binding.selectedlang.text = it.displayName }
+        }
+
+        viewModel.availableLanguages.observe(this) { resource ->
+            if (resource is Resource.Error) {
+                Toast.makeText(this, "Could not load languages: ${resource.message}", Toast.LENGTH_LONG).show()
             }
         }
 
         viewModel.generateResult.observe(this) { resource ->
-            Log.d("VoiceAIActivity", "generateResult state changed: ${resource.javaClass.simpleName}")
+            Log.d("VoiceAIActivity", "generateResult: ${resource.javaClass.simpleName}")
             when (resource) {
-
                 is Resource.Loading -> {
-                    Log.d("VoiceAIActivity", "Loading state: showing dialog, disabling button")
                     binding.btnGenerateVoice.isEnabled = false
                     showGeneratingDialog()
                 }
-
                 is Resource.Success -> {
-                    Log.d("VoiceAIActivity", "Success state: hiding dialog, enabling button, navigating to player")
                     binding.btnGenerateVoice.isEnabled = true
-                    hideGeneratingDialog() // Hide loading dialog
-
-                    val audioData = resource.data
-                    navigateToPlayer(audioData.audioUrl, audioData.audioBase64)
+                    hideGeneratingDialog()
+                    navigateToPlayer(resource.data.audioUrl, resource.data.audioBase64)
                 }
-
                 is Resource.Error -> {
-                    Log.d("VoiceAIActivity", "Error state: hiding dialog, checking text for button enable")
-                    hideGeneratingDialog() // Hide loading dialog
-                    // Re-enable button if there's text, allowing user to try again
-                    val currentText = binding.TtoChange.text.toString().trim()
-                    binding.btnGenerateVoice.isEnabled = currentText.isNotEmpty()
+                    hideGeneratingDialog()
+                    binding.btnGenerateVoice.isEnabled =
+                        binding.TtoChange.text.toString().trim().isNotEmpty()
+                    Toast.makeText(this, "Error: ${resource.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -199,16 +178,15 @@ class VoiceAIActivity : AppCompatActivity() {
         }
         startActivity(intent)
     }
+
     private var loadingDialog: AlertDialog? = null
 
     private fun showGeneratingDialog() {
         val view = layoutInflater.inflate(R.layout.dialog_generating_audio, null)
-
         loadingDialog = AlertDialog.Builder(this)
             .setView(view)
             .setCancelable(false)
             .create()
-
         loadingDialog?.window?.setBackgroundDrawableResource(android.R.color.transparent)
         loadingDialog?.show()
     }

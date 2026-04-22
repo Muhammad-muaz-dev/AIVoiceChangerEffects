@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.aivoicechangersounds.data.models.RecordingState
 import com.example.aivoicechangersounds.repositories.AudioRecorderRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import jakarta.inject.Inject
+import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
