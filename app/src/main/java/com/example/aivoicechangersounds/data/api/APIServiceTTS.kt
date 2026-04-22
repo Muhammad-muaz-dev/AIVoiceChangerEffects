@@ -21,7 +21,7 @@ interface ApiServiceTTS {
     @GET("api/voices/free")
     suspend fun getVoices(
         @Query("language") language: String? = null,
-        @Header("Authorization") token: String = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc3Njg0MTA4MSwiZXhwIjoxNzc2ODQyODgxfQ.UZjIhbnoC1xCWUSgsKtFRqUljaarHrsZN-CKQFa3oDc"
+        @Header("Authorization") token: String = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc3Njg0MjkzNSwiZXhwIjoxNzc2ODQ0NzM1fQ.OnxFHEoNkOvthzvb4zTOW2ZSgOVkXN4EaSv5qb9yxGY"
 
         ): Response<VoicesResponse>
 
@@ -30,7 +30,7 @@ interface ApiServiceTTS {
 
     @POST("api/generate")
     suspend fun generateTTS(
-        @Header("Authorization") token: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc3Njg0MTA4MSwiZXhwIjoxNzc2ODQyODgxfQ.UZjIhbnoC1xCWUSgsKtFRqUljaarHrsZN-CKQFa3oDc",
+        @Header("Authorization") token: String = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc3Njg0MjkzNSwiZXhwIjoxNzc2ODQ0NzM1fQ.OnxFHEoNkOvthzvb4zTOW2ZSgOVkXN4EaSv5qb9yxGY",
         @Body request: GenerateAudioRequest
 
     ): Response<GenerateAudioResponse>

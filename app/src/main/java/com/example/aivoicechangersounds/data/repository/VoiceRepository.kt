@@ -59,21 +59,23 @@ class VoiceRepository @Inject constructor(
         voiceId: String,
         language: String
     ): Resource<GenerateAudioResponse> {
+
         return withContext(Dispatchers.IO) {
             try {
-                val response = apiService.generateTTS(
-                    GenerateAudioRequest(text, voiceId, language)
-                )
 
+                val response = apiService.generateTTS(
+                    token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc3Njg0MjkzNSwiZXhwIjoxNzc2ODQ0NzM1fQ.OnxFHEoNkOvthzvb4zTOW2ZSgOVkXN4EaSv5qb9yxGY",
+                    request = GenerateAudioRequest(text, voiceId, language)
+                )
                 if (response.isSuccessful && response.body() != null) {
                     Resource.Success(response.body()!!)
                 } else {
-                    Resource.Error("Error: ${response.message()}")
+                    Resource.Error("Error: ${response.code()} ${response.message()}")
                 }
-
             } catch (e: Exception) {
                 Resource.Error(e.localizedMessage ?: "Unknown error")
             }
+
         }
     }
 }
