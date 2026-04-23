@@ -71,7 +71,6 @@ class VoiceAIViewModel @Inject constructor(
     private  fun loadVoices(languageCode: String?) {
         viewModelScope.launch {
             _voices.value = Resource.Loading
-            suspend { withContext(Dispatchers.IO) {
                 val result = voiceRepository.getVoices(languageCode)
                 _voices.value = result
 
@@ -79,8 +78,8 @@ class VoiceAIViewModel @Inject constructor(
                 if (result is Resource.Success && result.data.isNotEmpty()) {
                     _selectedVoice.value = result.data.first()
                 }
-            }
-            }
+
+
         }
     }
 

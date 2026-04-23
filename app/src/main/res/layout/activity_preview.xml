@@ -6,30 +6,36 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
-    tools:context="com.example.aivoicechangersounds.activities.ActivityPreview">
+    tools:context="com.voicechanger.app.ui.preview.ActivityPreview">
+
     <Toolbar
         android:id="@+id/toolbarpreview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+
         <ImageButton
+            android:id="@+id/btnBacktoolbar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:backgroundTint="@android:color/transparent"
             android:src="@drawable/ic_back"
-            app:tint="@color/black"
-            android:backgroundTint="@android:color/transparent"/>
+            app:tint="@color/black" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/outfitbold"
+            android:paddingLeft="30dp"
             android:text="Preview"
             android:textColor="@color/black"
-            android:fontFamily="@font/outfitbold"
-            android:textSize="20sp"
-            android:paddingLeft="30dp"/>
+            android:textSize="20sp" />
 
     </Toolbar>
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintpreview"
         android:layout_width="match_parent"
@@ -41,6 +47,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/toolbarpreview">
+
         <ImageView
             android:id="@+id/Img1"
             android:layout_width="40dp"
@@ -48,7 +55,8 @@
             android:src="@drawable/icon2"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:layout_margin="20dp"/>
+            android:layout_margin="20dp" />
+
         <TextView
             android:id="@+id/filename"
             android:layout_width="wrap_content"
@@ -60,7 +68,8 @@
             app:layout_constraintStart_toEndOf="@+id/Img1"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_marginTop="23dp"
-            android:layout_marginLeft="10dp"/>
+            android:layout_marginLeft="10dp" />
+
         <TextView
             android:id="@+id/recdate"
             android:layout_width="wrap_content"
@@ -70,7 +79,8 @@
             android:fontFamily="@font/outfitregular"
             app:layout_constraintStart_toEndOf="@+id/Img1"
             app:layout_constraintTop_toBottomOf="@+id/filename"
-            android:layout_marginStart="10dp"/>
+            android:layout_marginStart="10dp" />
+
         <ImageButton
             android:id="@+id/menupreview"
             android:layout_width="wrap_content"
@@ -80,7 +90,8 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_marginRight="30dp"
-            android:layout_marginTop="20dp"/>
+            android:layout_marginTop="20dp" />
+
         <LinearLayout
             android:id="@+id/linearpre"
             android:layout_width="match_parent"
@@ -89,14 +100,16 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/Img1">
-        <TextView
-            android:id="@+id/continuetime"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="01:32"
-            android:textColor="@color/black"
-            android:layout_margin="20dp"
-            android:layout_gravity="center"/>
+
+            <TextView
+                android:id="@+id/continuetime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="@color/black"
+                android:layout_margin="20dp"
+                android:layout_gravity="center" />
+
             <SeekBar
                 android:id="@+id/seekBarpre"
                 android:layout_width="0dp"
@@ -106,16 +119,18 @@
                 android:progressBackgroundTint="@color/sandcolor"
                 android:progressTint="@color/accent"
                 android:thumbTint="@color/white" />
+
             <TextView
                 android:id="@+id/totalduration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="15:10"
+                android:text="00:00"
                 android:textColor="@color/black"
                 android:layout_gravity="center"
-                android:layout_margin="20dp"/>
+                android:layout_margin="20dp" />
 
         </LinearLayout>
+
         <LinearLayout
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
@@ -127,26 +142,30 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/linearpre"
             app:layout_constraintBottom_toBottomOf="parent">
+
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPlayOriginal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:drawableLeft="@drawable/icpausing"
                 app:cornerRadius="24dp"
                 app:backgroundTint="@null"
                 android:text="Play Original"
-                android:background="@drawable/gradient_button"/>
+                android:background="@drawable/gradient_button" />
+
             <View
                 android:layout_width="0dp"
                 android:layout_height="0dp"
-                android:layout_weight="1"/>
+                android:layout_weight="1" />
+
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPlayReverse"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/gradient_button2"
                 app:backgroundTint="@null"
                 android:drawableLeft="@drawable/icplaying"
-                android:text="Play Reverse"
-                />
+                android:text="Play Reverse" />
 
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
@@ -167,7 +186,7 @@
         app:iconPadding="8dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/constraintpreview"/>
+        app:layout_constraintTop_toBottomOf="@+id/constraintpreview" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnback"
@@ -184,6 +203,6 @@
         android:backgroundTint="@color/background"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnsave"/>
+        app:layout_constraintTop_toBottomOf="@+id/btnsave" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

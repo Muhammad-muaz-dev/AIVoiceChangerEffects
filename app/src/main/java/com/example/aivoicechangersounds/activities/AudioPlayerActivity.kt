@@ -51,10 +51,10 @@ class AudioPlayerActivity : AppCompatActivity() {
     }
 
     private fun setupToolbar() {
-        setSupportActionBar(binding.toolbaraudioplayer)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "Audio Player"
-        binding.toolbaraudioplayer.setNavigationOnClickListener { finish() }
+
+        binding.backing.setOnClickListener {
+            finish()
+        }
     }
 
     private fun loadAudioData() {

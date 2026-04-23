@@ -20,6 +20,7 @@ import com.voicechanger.app.databinding.ActivityRecordingBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import android.Manifest
+import kotlin.jvm.java
 
 @AndroidEntryPoint
 class RecordingActivity : AppCompatActivity() {
@@ -126,7 +127,7 @@ class RecordingActivity : AppCompatActivity() {
 
     private fun navigateToNextScreen(filePath: String) {
         // Replace VoiceEffectsActivity::class.java with your actual next Activity
-        val intent = Intent(this, Class.forName("VoiceEffectsActivity")).apply {
+        val intent = Intent(this, VoiceEffectActivity::class.java).apply {
             putExtra(EXTRA_AUDIO_FILE_PATH, filePath)
         }
         startActivity(intent)

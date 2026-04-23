@@ -2,6 +2,7 @@ package com.example.aivoicechangersounds.di
 
 import android.content.Context
 import com.example.aivoicechangersounds.data.repository.AudioRecorderRepository
+import com.example.aivoicechangersounds.data.repository.ReverseVoiceRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,5 +21,13 @@ object AppModule {
         @ApplicationContext context: Context
     ): AudioRecorderRepository {
         return AudioRecorderRepository(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReverseVoiceRepository(
+        @ApplicationContext context: Context
+    ): ReverseVoiceRepository {
+        return ReverseVoiceRepository(context)
     }
 }

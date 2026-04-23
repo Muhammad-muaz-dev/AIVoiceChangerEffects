@@ -30,5 +30,8 @@ class MainActivity : AppCompatActivity() {
         binding.cardrav.setOnClickListener {
             startActivity(Intent(this, RecordingActivity::class.java))
         }
+        binding.cardrv.setOnClickListener {
+            startActivity(Intent(this, ReverseVoice::class.java))
+        }
     }
 }

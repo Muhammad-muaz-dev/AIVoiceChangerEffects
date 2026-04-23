@@ -3,7 +3,6 @@ package com.example.aivoicechangersounds.Viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aivoicechangersounds.data.models.RecordingState
-import com.example.aivoicechangersounds.data.repository.AudioRecorderRepository
 import com.example.aivoicechangersounds.data.repository.ReverseVoiceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -16,7 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ViewModelReverseVoice @Inject constructor(
-    private val audioRecorderRepository: ReverseVoiceRepository
+    private val reverseVoiceRepository: ReverseVoiceRepository
 ) : ViewModel() {
 
     private val _recordingState = MutableStateFlow<RecordingState>(RecordingState.Idle)
@@ -44,7 +43,7 @@ class ViewModelReverseVoice @Inject constructor(
     private fun startRecording() {
         viewModelScope.launch {
             try {
-                currentFilePath = audioRecorderRepository.startRecording()
+                currentFilePath = reverseVoiceRepository.startRecording()
                 _recordingState.value = RecordingState.Recording
                 startTimer()
             } catch (e: Exception) {
@@ -58,7 +57,7 @@ class ViewModelReverseVoice @Inject constructor(
     private fun pauseRecording() {
         viewModelScope.launch {
             try {
-                audioRecorderRepository.pauseRecording()
+                reverseVoiceRepository.pauseRecording()
                 _recordingState.value = RecordingState.Paused
                 pauseTimer()
             } catch (e: Exception) {
@@ -72,7 +71,7 @@ class ViewModelReverseVoice @Inject constructor(
     private fun resumeRecording() {
         viewModelScope.launch {
             try {
-                audioRecorderRepository.resumeRecording()
+                reverseVoiceRepository.resumeRecording()
                 _recordingState.value = RecordingState.Recording
                 startTimer()
             } catch (e: Exception) {
@@ -86,7 +85,7 @@ class ViewModelReverseVoice @Inject constructor(
     fun onCancelClicked() {
         viewModelScope.launch {
             try {
-                audioRecorderRepository.cancelRecording()
+                reverseVoiceRepository.cancelRecording()
                 stopTimer()
                 _elapsedTime.value = 0L
                 _formattedTime.value = "00:00"
@@ -105,7 +104,7 @@ class ViewModelReverseVoice @Inject constructor(
     fun onDoneClicked() {
         viewModelScope.launch {
             try {
-                val filePath = audioRecorderRepository.stopRecording()
+                val filePath = reverseVoiceRepository.stopRecording()
                 stopTimer()
                 if (filePath != null) {
                     _recordingState.value = RecordingState.Done(filePath)
@@ -150,7 +149,7 @@ class ViewModelReverseVoice @Inject constructor(
         timerJob?.cancel()
         viewModelScope.launch {
             try {
-                audioRecorderRepository.cancelRecording()
+                reverseVoiceRepository.cancelRecording()
             } catch (_: Exception) { }
         }
     }
