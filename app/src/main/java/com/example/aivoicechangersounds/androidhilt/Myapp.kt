@@ -12,7 +12,7 @@ class Myapp: Application() {
         // TODO: Replace with real login flow later
         // For now set the token once on app start for testing
         TokenProvider.setToken(
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc3Njg2NjA1MCwiZXhwIjoxNzc2ODY3ODUwfQ.OCZTr6Oms5-pO0C9f_D3O8DmoV4LwQaawLKiueEvmE0"
+            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc3NjkxOTIxOCwiZXhwIjoxNzc2OTIxMDE4fQ.i1ilW_lyfpHMvFB01OfNA_BVhZSINeH7znHigNFkvMk"
         )
     }
 }

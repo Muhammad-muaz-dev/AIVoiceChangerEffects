@@ -2,6 +2,8 @@ package com.example.aivoicechangersounds.activities
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -20,6 +22,8 @@ import com.voicechanger.app.R
 import com.voicechanger.app.databinding.ActivityVoiceAiactivityBinding
 import com.voicechanger.app.databinding.BottomSheetLanguagesBinding
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @AndroidEntryPoint
 class VoiceAIActivity : AppCompatActivity() {
@@ -164,10 +168,18 @@ class VoiceAIActivity : AppCompatActivity() {
         viewModel.voices.observe(this) { resource ->
             when (resource) {
 
-                is Resource.Loading -> {}
+                is Resource.Loading -> {
+                    binding.progressVoices.visibility = View.VISIBLE
+                    binding.rvVoices.visibility = View.GONE
+                }
 
                 is Resource.Success -> {
+                    binding.progressVoices.visibility = View.GONE
+                    binding.rvVoices.visibility = View.VISIBLE
+
                     voiceAdapter.submitList(resource.data)
+
+                    Log.d("voices list", "resource: ${resource.data}")
 
                     if (resource.data.isEmpty()) {
                         Toast.makeText(this, "No voices found", Toast.LENGTH_SHORT).show()
@@ -175,6 +187,8 @@ class VoiceAIActivity : AppCompatActivity() {
                 }
 
                 is Resource.Error -> {
+                    binding.progressVoices.visibility = View.GONE
+                    binding.rvVoices.visibility = View.GONE
                     Toast.makeText(this, resource.message, Toast.LENGTH_LONG).show()
                 }
             }

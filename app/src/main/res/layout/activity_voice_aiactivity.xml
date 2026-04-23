@@ -156,11 +156,23 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvVoices"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="500dp"
                 android:layout_marginTop="10dp"
-                android:nestedScrollingEnabled="false"
+                android:visibility="gone"
+                android:nestedScrollingEnabled="true"
                 app:layout_constraintTop_toBottomOf="@+id/T2"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"/>
+            <ProgressBar
+                android:id="@+id/progressVoices"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:visibility="gone"
+                app:layout_constraintTop_toTopOf="@id/rvVoices"
+                app:layout_constraintBottom_toBottomOf="@id/rvVoices"
+                app:layout_constraintStart_toStartOf="@id/rvVoices"
+                app:layout_constraintEnd_toEndOf="@id/rvVoices" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>

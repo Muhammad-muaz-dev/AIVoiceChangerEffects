@@ -7,7 +7,9 @@ import com.example.aivoicechangersounds.data.models.Voice
 import com.example.aivoicechangersounds.data.repository.VoiceRepository
 import com.example.aivoicechangersounds.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -42,7 +44,7 @@ class VoiceAIViewModel @Inject constructor(
     fun loadInitialData() {
         viewModelScope.launch {
             _availableLanguages.value = Resource.Loading
-            _voices.value = Resource.Loading
+            //_voices.value = Resource.Loading
 
             try {
                 val languagesResult = voiceRepository.getLanguages()
@@ -60,21 +62,24 @@ class VoiceAIViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _availableLanguages.value = Resource.Error(e.message ?: "Error")
-                _voices.value = Resource.Error(e.message ?: "Error")
+              //  _voices.value = Resource.Error(e.message ?: "Error")
             }
         }
     }
 
     // ───────────────────────── Load Voices ─────────────────────────
-    private fun loadVoices(languageCode: String?) {
+    private  fun loadVoices(languageCode: String?) {
         viewModelScope.launch {
             _voices.value = Resource.Loading
-            val result = voiceRepository.getVoices(languageCode)
-            _voices.value = result
-            
-            // Auto-select first voice if none selected
-            if (result is Resource.Success && result.data.isNotEmpty()) {
-                _selectedVoice.value = result.data.first()
+            suspend { withContext(Dispatchers.IO) {
+                val result = voiceRepository.getVoices(languageCode)
+                _voices.value = result
+
+                // Auto-select first voice if none selected
+                if (result is Resource.Success && result.data.isNotEmpty()) {
+                    _selectedVoice.value = result.data.first()
+                }
+            }
             }
         }
     }

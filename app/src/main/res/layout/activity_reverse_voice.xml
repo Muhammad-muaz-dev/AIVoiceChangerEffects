@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background">
+    <Toolbar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_back"
+            android:backgroundTint="@android:color/transparent"
+            app:tint="@color/black"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Recording"
+            android:textSize="20sp"
+            android:paddingLeft="30dp"
+            android:fontFamily="@font/outfitbold"
+            android:textColor="@color/black"/>
+    </Toolbar>
+    <!-- Waveform placeholder -->
+    <View
+        android:id="@+id/waveformView"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:layout_marginTop="80dp"
+        android:background="@color/background" />
+
+    <TextView
+        android:id="@+id/tvTimer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00"
+        android:layout_gravity="center_horizontal"
+        android:textSize="22sp"
+        android:fontFamily="@font/outfitsemibold"
+        android:textColor="@color/black"
+        android:layout_marginTop="16dp" />
+
+    <!-- Buttons -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginTop="32dp"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/btncancel"
+            android:text="Record"
+            android:src="@drawable/ic_close"
+            android:layout_gravity="center"
+            android:backgroundTint="@android:color/transparent"
+            android:layout_height="56dp"
+            android:layout_width="56dp"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <ImageButton
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:id="@+id/btnaudio"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/ic_audio"
+            android:backgroundTint="@android:color/transparent"
+            android:text="Pause"
+            android:layout_marginStart="12dp"
+            app:layout_constraintStart_toEndOf="@+id/btncancel"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btndone" />
+
+        <ImageButton
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:src="@drawable/ic_ticker"
+            android:layout_gravity="end"
+            android:backgroundTint="@android:color/transparent"
+            android:id="@+id/btndone"
+            android:layout_marginStart="12dp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</LinearLayout>

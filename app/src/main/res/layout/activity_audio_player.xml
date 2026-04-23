@@ -66,11 +66,12 @@
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent">
 
-                        <ImageButton
+                        <de.hdodenhof.circleimageview.CircleImageView
                             android:id="@+id/buttonReplay"
                             android:layout_width="32dp"
                             android:layout_height="32dp"
                             android:layout_gravity="center"
+                            android:background="@android:color/transparent"
                             android:layout_marginLeft="10dp"
                             android:backgroundTint="@android:color/transparent"
                             android:src="@drawable/ic_playbutton" />
