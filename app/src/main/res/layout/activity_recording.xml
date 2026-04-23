@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/background">
 <Toolbar
+    android:id="@+id/tool"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintTop_toTopOf="parent">
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -21,15 +25,20 @@
         android:textSize="20sp"
         android:paddingLeft="30dp"
         android:fontFamily="@font/outfitbold"
-        android:textColor="@color/black"/>
+        android:textColor="@color/black"
+        />
 </Toolbar>
     <!-- Waveform placeholder -->
-    <View
+    <ImageView
         android:id="@+id/waveformView"
         android:layout_width="match_parent"
         android:layout_height="120dp"
         android:layout_marginTop="80dp"
-        android:background="@color/background" />
+        android:src="@drawable/ic_wave"
+        android:background="@color/background"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tool"/>
 
     <TextView
         android:id="@+id/tvTimer"
@@ -40,16 +49,22 @@
         android:textSize="22sp"
         android:fontFamily="@font/outfitsemibold"
         android:textColor="@color/black"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/waveformView"/>
 
     <!-- Buttons -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="25dp"
+        android:layout_marginLeft="20dp"
         android:layout_marginRight="25dp"
         android:layout_marginTop="32dp"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvTimer">
 
         <ImageButton
             android:id="@+id/btncancel"
@@ -59,6 +74,7 @@
             android:backgroundTint="@android:color/transparent"
             android:layout_height="56dp"
             android:layout_width="56dp"
+            android:layout_marginLeft="5dp"
             android:visibility="gone"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -73,10 +89,10 @@
             android:backgroundTint="@android:color/transparent"
             android:text="Pause"
             android:layout_marginStart="12dp"
-            app:layout_constraintStart_toEndOf="@+id/btncancel"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/btndone" />
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <ImageButton
             android:layout_width="56dp"
@@ -92,4 +108,4 @@
             app:layout_constraintBottom_toBottomOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
