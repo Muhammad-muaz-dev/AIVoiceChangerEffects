@@ -74,7 +74,9 @@ class VoiceRepository @Inject constructor(
             try {
                 val response = apiTTS.generateTTS(
                     GenerateAudioRequest(text, model)
+
                 )
+                Log.d("responseappearing","$response")
 
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
@@ -99,6 +101,7 @@ class VoiceRepository @Inject constructor(
                 Log.e("VOICE_DEBUG", "Error generating audio", e)
                 Resource.Error(e.localizedMessage ?: "Unknown error")
             }
+
         }
     }
 }

@@ -137,8 +137,7 @@ class VoiceEffectViewModel @Inject constructor(
         viewModelScope.launch {
             _voicesLoading.value = true
             _voicesError.value = null
-               suspend {
-                   withContext(Dispatchers.IO) {
+
                        val result = voiceEffectRepository.getVoices(language)
 
                        when (result) {
@@ -162,8 +161,8 @@ class VoiceEffectViewModel @Inject constructor(
                        }
 
                        _voicesLoading.value = false
-                   }
-               }
+
+
         }
     }
 

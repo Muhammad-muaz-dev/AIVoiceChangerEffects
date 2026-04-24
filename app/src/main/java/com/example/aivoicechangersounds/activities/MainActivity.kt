@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.voicechanger.app.databinding.ActivityMainBinding
 import dagger.hilt.android.AndroidEntryPoint
+import kotlin.jvm.java
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -32,6 +33,12 @@ class MainActivity : AppCompatActivity() {
         }
         binding.cardrv.setOnClickListener {
             startActivity(Intent(this, ReverseVoice::class.java))
+        }
+        binding.cardvoicet.setOnClickListener {
+            startActivity(Intent(this, ActivityVoiceTranslate::class.java))
+        }
+        binding.cardfile.setOnClickListener {
+            startActivity(Intent(this, ActivityFile::class.java))
         }
     }
 }
