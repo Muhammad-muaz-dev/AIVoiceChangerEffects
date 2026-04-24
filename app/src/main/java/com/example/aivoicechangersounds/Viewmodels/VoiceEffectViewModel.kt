@@ -4,22 +4,26 @@ import android.media.MediaPlayer
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.aivoicechangersounds.data.models.GenerateVoiceResponse
+import com.example.aivoicechangersounds.data.models.GenerateAudioResponse
 import com.example.aivoicechangersounds.data.models.Voice
 import com.example.aivoicechangersounds.data.repository.VoiceEffectRepository
+import com.example.aivoicechangersounds.data.repository.VoiceRepository
 import com.example.aivoicechangersounds.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.IOException
 
 
 @HiltViewModel
 class VoiceEffectViewModel @Inject constructor(
-    private val voiceEffectRepository: VoiceEffectRepository
+    private val voiceEffectRepository: VoiceEffectRepository,
+    private val voiceRepository: VoiceRepository
 ) : ViewModel() {
 
     // --- Voice list state ---
@@ -53,8 +57,8 @@ class VoiceEffectViewModel @Inject constructor(
     private val _generating = MutableStateFlow(false)
     val generating: StateFlow<Boolean> = _generating.asStateFlow()
 
-    private val _generateResult = MutableStateFlow<GenerateVoiceResponse?>(null)
-    val generateResult: StateFlow<GenerateVoiceResponse?> = _generateResult.asStateFlow()
+    private val _generateResult = MutableStateFlow<GenerateAudioResponse?>(null)
+    val generateResult: StateFlow<GenerateAudioResponse?> = _generateResult.asStateFlow()
 
     private val _generateError = MutableStateFlow<String?>(null)
     val generateError: StateFlow<String?> = _generateError.asStateFlow()
@@ -62,10 +66,15 @@ class VoiceEffectViewModel @Inject constructor(
     // --- MediaPlayer ---
     private var mediaPlayer: MediaPlayer? = null
     private var audioFilePath: String? = null
+    private var transcribedText: String? = null
 
     fun setAudioFilePath(path: String) {
         audioFilePath = path
         prepareMediaPlayer(path)
+    }
+
+    fun setTranscribedText(text: String) {
+        transcribedText = text
     }
 
     private fun prepareMediaPlayer(path: String) {
@@ -124,28 +133,37 @@ class VoiceEffectViewModel @Inject constructor(
     }
 
     // --- Voice list ---
-     fun fetchVoices(language: String? = null) {
+    fun fetchVoices(language: String? = null) {
         viewModelScope.launch {
             _voicesLoading.value = true
             _voicesError.value = null
+               suspend {
+                   withContext(Dispatchers.IO) {
+                       val result = voiceEffectRepository.getVoices(language)
 
-            val result = voiceEffectRepository.getVoices(language)
+                       when (result) {
+                           is Resource.Success -> {
+                               _voices.value = result.data
+                               Log.d(
+                                   "VoiceEffectViewModelinhg",
+                                   "fetchVoices Error: ${result.data}"
+                               )
+                           }
 
-            when (result) {
-                is Resource.Success -> {
-                    _voices.value = result.data
-                    Log.d("VoiceEffectViewModelinhg", "fetchVoices Error: ${result.data}")
-                }
+                           is Resource.Error -> {
+                               _voicesError.value = result.message
+                               Log.d(
+                                   "VoiceEffectViewModelinhg",
+                                   "fetchVoices Error: ${result.message}"
+                               )
+                           }
 
-                is Resource.Error -> {
-                    _voicesError.value = result.message
-                    Log.d("VoiceEffectViewModelinhg", "fetchVoices Error: ${result.message}")
-                }
+                           else -> {}
+                       }
 
-                else -> {}
-            }
-
-            _voicesLoading.value = false
+                       _voicesLoading.value = false
+                   }
+               }
         }
     }
 
@@ -153,16 +171,22 @@ class VoiceEffectViewModel @Inject constructor(
         _selectedVoice.value = voice
     }
 
-    // --- Generate voice ---
+    // --- Generate voice effect via TTS (audio → text → API) ---
     fun generateVoiceEffect() {
         val voice = _selectedVoice.value ?: return
-        val filePath = audioFilePath ?: return
+        val text = transcribedText
+        Log.d("Debugging  Option","The text appearing is $text")
+
+        if (text.isNullOrBlank()) {
+            _generateError.value = "Could not transcribe audio. Please try recording again."
+            return
+        }
 
         viewModelScope.launch {
             _generating.value = true
             _generateError.value = null
 
-            val result = voiceEffectRepository.generateVoice(voice.id, filePath)
+            val result = voiceRepository.generateAudio(text, voice.id)
 
             when (result) {
                 is Resource.Success -> {

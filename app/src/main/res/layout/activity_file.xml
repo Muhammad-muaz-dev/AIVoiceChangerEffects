@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:background="@color/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.aivoicechangersounds.activities.ActivityFile">
+    <Toolbar
+        android:id="@+id/tooolbarfilesaved"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="20dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+        <ImageButton
+            android:id="@+id/ArrowBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_back"
+            android:backgroundTint="@android:color/transparent"
+            app:tint="@color/black" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Audio Saved"
+            android:textSize="20sp"
+            android:fontFamily="@font/outfitbold"
+            android:textColor="@color/black"
+            android:paddingLeft="40dp"/>
+    </Toolbar>
+    <HorizontalScrollView
+        android:id="@+id/horizontalscroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
+        android:fillViewport="true"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@+id/tooolbarfilesaved"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:id="@+id/linearfile"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/allfiles"
+                android:layout_width="126dp"
+                android:layout_height="wrap_content"
+                android:text="All Files"
+                android:layout_marginEnd="8dp"
+                app:cornerRadius="10dp"
+                android:textColor="@color/black"
+                android:backgroundTint="#F4F2FF"
+                app:strokeColor="@color/accent"
+                app:strokeWidth="1dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/aivoice"
+                android:layout_width="126dp"
+                android:layout_height="wrap_content"
+                android:text="Ai Voice"
+                android:layout_marginEnd="8dp"
+                app:cornerRadius="10dp"
+                android:textColor="@color/black"
+                android:backgroundTint="#F4F2FF"
+                app:strokeColor="@color/accent"
+                app:strokeWidth="1dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/reverseVoic"
+                android:layout_width="126dp"
+                android:layout_height="wrap_content"
+                android:text="Reverse"
+                android:layout_marginEnd="8dp"
+                app:cornerRadius="10dp"
+                android:textColor="@color/black"
+                android:backgroundTint="#F4F2FF"
+                app:strokeColor="@color/accent"
+                app:strokeWidth="1dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/voice_effect"
+                android:layout_width="126dp"
+                android:layout_height="wrap_content"
+                android:backgroundTint="#F4F2FF"
+                android:text="Effect"
+                android:textColor="@color/black"
+                app:cornerRadius="10dp"
+                app:strokeColor="@color/accent"
+                app:strokeWidth="1dp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/translate"
+                android:layout_width="126dp"
+                android:layout_height="wrap_content"
+                android:backgroundTint="#F4F2FF"
+                android:text="Translate "
+                android:textColor="@color/black"
+                app:cornerRadius="10dp"
+                android:layout_marginStart="10dp"
+                app:strokeColor="@color/accent"
+                app:strokeWidth="1dp" />
+
+        </LinearLayout>
+
+
+    </HorizontalScrollView>
+    <androidx.recyclerview.widget.RecyclerView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_margin="20dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/horizontalscroll"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

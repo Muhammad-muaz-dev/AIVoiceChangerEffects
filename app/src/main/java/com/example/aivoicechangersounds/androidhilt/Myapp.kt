@@ -9,10 +9,8 @@ class Myapp: Application() {
     override fun onCreate() {
         super.onCreate()
 
-        // TODO: Replace with real login flow later
-        // For now set the token once on app start for testing
         TokenProvider.setToken(
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMSIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NzY5NDY4NzksImV4cCI6MTc3Njk0ODY3OX0.8G6AN-gqwi_QO2X2rMN2YqOOg4wYr0FHUONRYJDWcWc"
+            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMSIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NzcwMDM4NTQsImV4cCI6MTc3NzAwNTY1NH0.jI2OXBKEmHKNSuCLnlJsuBUfrPhlaLmv08qZVbn66YQ"
         )
     }
 }

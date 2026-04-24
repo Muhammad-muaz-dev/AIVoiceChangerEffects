@@ -1,10 +1,9 @@
 package com.example.aivoicechangersounds.utils
 
-import android.media.MediaCodec
-import android.media.MediaExtractor
-import android.media.MediaFormat
+import android.media.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
@@ -12,150 +11,137 @@ import java.nio.ByteOrder
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Singleton class to reverse an audio file programmatically.
- * Managed by Hilt DI — injected wherever needed.
- *
- * Flow:
- * 1. MediaExtractor reads the compressed audio file (MP3, AAC, M4A, WAV, etc.)
- * 2. MediaCodec decodes it to raw PCM samples
- * 3. PCM samples are reversed (respecting 16-bit sample boundaries)
- * 4. Reversed PCM is written as a standard WAV file
- *
- * Usage (injected via Hilt):
- *   @Inject lateinit var audioReverser: AudioReverser
- *   val reversedPath = audioReverser.reverse(inputFilePath, outputDir)
- */
 @Singleton
 class AudioReverser @Inject constructor() {
 
-    /**
-     * Reverses the audio in [inputPath] and writes a WAV file to [outputDir].
-     *
-     * @param inputPath  Absolute path to the source audio file (MP3, AAC, WAV, etc.)
-     * @param outputDir  Directory where the reversed WAV file will be saved
-     * @return           Absolute path to the reversed WAV file
-     * @throws Exception if decoding or writing fails
-     *
-     * This is a suspend function that runs entirely on Dispatchers.IO,
-     * so it never blocks the UI thread.
-     */
     suspend fun reverse(inputPath: String, outputDir: File): String =
         withContext(Dispatchers.IO) {
-            // 1. Decode audio to raw PCM bytes
+
             val decodeResult = decodeToRawPcm(inputPath)
 
-            // 2. Reverse the PCM samples
-            val reversedPcm = reversePcmSamples(
-                decodeResult.pcmData,
-                decodeResult.bytesPerSample * decodeResult.channelCount
-            )
+            val bytesPerSample = 2
+            val frameSize = bytesPerSample * decodeResult.channelCount
 
-            // 3. Write reversed PCM as WAV
-            val outputFile = File(
-                outputDir,
-                "reversed_${System.currentTimeMillis()}.wav"
-            )
+            val reversedPcm = reversePcmFrames(decodeResult.pcmData, frameSize)
+
+            val outputFile = File(outputDir, "reversed_${System.currentTimeMillis()}.wav")
+
             writeWavFile(
                 outputFile,
                 reversedPcm,
                 decodeResult.sampleRate,
                 decodeResult.channelCount,
-                decodeResult.bytesPerSample * 8 // bits per sample
+                bytesPerSample * 8
             )
 
             outputFile.absolutePath
         }
 
-    // --- Internal data class for decode results ---
     private data class DecodeResult(
         val pcmData: ByteArray,
         val sampleRate: Int,
-        val channelCount: Int,
-        val bytesPerSample: Int // typically 2 for 16-bit audio
+        val channelCount: Int
     )
 
-    /**
-     * Decodes any supported audio file to raw PCM byte array using
-     * Android's MediaExtractor + MediaCodec.
-     */
     private fun decodeToRawPcm(inputPath: String): DecodeResult {
+
         val extractor = MediaExtractor()
         extractor.setDataSource(inputPath)
 
-        // Find the first audio track
-        var audioTrackIndex = -1
-        var inputFormat: MediaFormat? = null
+        var trackIndex = -1
+        var format: MediaFormat? = null
+
         for (i in 0 until extractor.trackCount) {
-            val format = extractor.getTrackFormat(i)
-            val mime = format.getString(MediaFormat.KEY_MIME) ?: ""
-            if (mime.startsWith("audio/")) {
-                audioTrackIndex = i
-                inputFormat = format
+            val f = extractor.getTrackFormat(i)
+            val mime = f.getString(MediaFormat.KEY_MIME)
+            if (mime?.startsWith("audio/") == true) {
+                trackIndex = i
+                format = f
                 break
             }
         }
 
-        if (audioTrackIndex == -1 || inputFormat == null) {
-            extractor.release()
-            throw IllegalArgumentException("No audio track found in file: $inputPath")
-        }
+        require(trackIndex != -1 && format != null) { "No valid audio track found" }
 
-        extractor.selectTrack(audioTrackIndex)
+        extractor.selectTrack(trackIndex)
 
-        val mime = inputFormat.getString(MediaFormat.KEY_MIME)!!
-        val sampleRate = inputFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
-        val channelCount = inputFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
-
-        // Create decoder
+        val mime = format.getString(MediaFormat.KEY_MIME)!!
         val codec = MediaCodec.createDecoderByType(mime)
-        codec.configure(inputFormat, null, null, 0)
+        codec.configure(format, null, null, 0)
         codec.start()
 
         val bufferInfo = MediaCodec.BufferInfo()
-        val pcmChunks = mutableListOf<ByteArray>()
-        var totalPcmBytes = 0
-        var isEos = false
+        val outputStream = ByteArrayOutputStream()
 
-        while (!isEos) {
-            // Feed input buffers
-            val inputBufferIndex = codec.dequeueInputBuffer(10_000)
-            if (inputBufferIndex >= 0) {
-                val inputBuffer = codec.getInputBuffer(inputBufferIndex)!!
-                val sampleSize = extractor.readSampleData(inputBuffer, 0)
-                if (sampleSize < 0) {
-                    // End of stream
-                    codec.queueInputBuffer(
-                        inputBufferIndex, 0, 0, 0,
-                        MediaCodec.BUFFER_FLAG_END_OF_STREAM
-                    )
-                } else {
-                    val presentationTimeUs = extractor.sampleTime
-                    codec.queueInputBuffer(
-                        inputBufferIndex, 0, sampleSize,
-                        presentationTimeUs, 0
-                    )
-                    extractor.advance()
+        var inputEOS = false
+        var outputEOS = false
+
+        var sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE)
+        var channels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+
+        while (!outputEOS) {
+
+            if (!inputEOS) {
+                val inputIndex = codec.dequeueInputBuffer(10_000)
+
+                if (inputIndex >= 0) {
+                    val inputBuffer = codec.getInputBuffer(inputIndex)!!
+
+                    val size = extractor.readSampleData(inputBuffer, 0)
+
+                    if (size < 0) {
+                        codec.queueInputBuffer(
+                            inputIndex,
+                            0,
+                            0,
+                            0,
+                            MediaCodec.BUFFER_FLAG_END_OF_STREAM
+                        )
+                        inputEOS = true
+                    } else {
+                        codec.queueInputBuffer(
+                            inputIndex,
+                            0,
+                            size,
+                            extractor.sampleTime,
+                            0
+                        )
+                        extractor.advance()
+                    }
                 }
             }
 
-            // Drain output buffers
-            var outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, 10_000)
-            while (outputBufferIndex >= 0) {
-                if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
-                    isEos = true
+            val outputIndex = codec.dequeueOutputBuffer(bufferInfo, 10_000)
+
+            when (outputIndex) {
+
+                MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+                    val newFormat = codec.outputFormat
+                    sampleRate = newFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
+                    channels = newFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
                 }
 
-                if (bufferInfo.size > 0) {
-                    val outputBuffer = codec.getOutputBuffer(outputBufferIndex)!!
-                    val chunk = ByteArray(bufferInfo.size)
-                    outputBuffer.get(chunk)
-                    pcmChunks.add(chunk)
-                    totalPcmBytes += chunk.size
-                }
+                else -> if (outputIndex >= 0) {
 
-                codec.releaseOutputBuffer(outputBufferIndex, false)
-                outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, 0)
+                    val outputBuffer = codec.getOutputBuffer(outputIndex)!!
+
+                    if (bufferInfo.size > 0) {
+
+                        outputBuffer.position(bufferInfo.offset)
+                        outputBuffer.limit(bufferInfo.offset + bufferInfo.size)
+
+                        val chunk = ByteArray(bufferInfo.size)
+                        outputBuffer.get(chunk)
+
+                        outputStream.write(chunk)
+                    }
+
+                    codec.releaseOutputBuffer(outputIndex, false)
+
+                    if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
+                        outputEOS = true
+                    }
+                }
             }
         }
 
@@ -163,98 +149,65 @@ class AudioReverser @Inject constructor() {
         codec.release()
         extractor.release()
 
-        // Combine all PCM chunks into one byte array
-        val pcmData = ByteArray(totalPcmBytes)
-        var offset = 0
-        for (chunk in pcmChunks) {
-            System.arraycopy(chunk, 0, pcmData, offset, chunk.size)
-            offset += chunk.size
-        }
-
         return DecodeResult(
-            pcmData = pcmData,
-            sampleRate = sampleRate,
-            channelCount = channelCount,
-            bytesPerSample = 2 // 16-bit PCM (standard MediaCodec output)
+            outputStream.toByteArray(),
+            sampleRate,
+            channels
         )
     }
 
-    /**
-     * Reverses PCM samples respecting frame boundaries.
-     *
-     * A "frame" = bytesPerSample * channelCount bytes.
-     * For stereo 16-bit: 1 frame = 4 bytes (2 bytes left + 2 bytes right).
-     * For mono 16-bit: 1 frame = 2 bytes.
-     *
-     * We swap entire frames so channels stay correct.
-     */
-    private fun reversePcmSamples(pcmData: ByteArray, bytesPerFrame: Int): ByteArray {
-        val totalFrames = pcmData.size / bytesPerFrame
-        val reversed = ByteArray(pcmData.size)
+    private fun reversePcmFrames(pcm: ByteArray, frameSize: Int): ByteArray {
+
+        val totalFrames = pcm.size / frameSize
+        val reversed = ByteArray(pcm.size)
 
         for (i in 0 until totalFrames) {
-            val srcOffset = i * bytesPerFrame
-            val destOffset = (totalFrames - 1 - i) * bytesPerFrame
-            System.arraycopy(pcmData, srcOffset, reversed, destOffset, bytesPerFrame)
+
+            val src = i * frameSize
+            val dst = (totalFrames - 1 - i) * frameSize
+
+            System.arraycopy(pcm, src, reversed, dst, frameSize)
         }
 
         return reversed
     }
 
-    /**
-     * Writes raw PCM data as a standard WAV file with proper header.
-     *
-     * WAV format: 44-byte RIFF header + raw PCM data
-     */
     private fun writeWavFile(
-        outputFile: File,
-        pcmData: ByteArray,
+        file: File,
+        pcm: ByteArray,
         sampleRate: Int,
-        channelCount: Int,
+        channels: Int,
         bitsPerSample: Int
     ) {
-        val byteRate = sampleRate * channelCount * bitsPerSample / 8
-        val blockAlign = channelCount * bitsPerSample / 8
-        val dataSize = pcmData.size
-        val totalSize = 36 + dataSize // file size minus 8 bytes for RIFF header
 
-        FileOutputStream(outputFile).use { fos ->
-            val buffer = ByteBuffer.allocate(44)
-            buffer.order(ByteOrder.LITTLE_ENDIAN)
+        val byteRate = sampleRate * channels * bitsPerSample / 8
+        val blockAlign = channels * bitsPerSample / 8
+        val dataSize = pcm.size
+        val totalSize = 36 + dataSize
 
-            // RIFF header
-            buffer.put('R'.code.toByte())
-            buffer.put('I'.code.toByte())
-            buffer.put('F'.code.toByte())
-            buffer.put('F'.code.toByte())
-            buffer.putInt(totalSize)            // ChunkSize
-            buffer.put('W'.code.toByte())
-            buffer.put('A'.code.toByte())
-            buffer.put('V'.code.toByte())
-            buffer.put('E'.code.toByte())
+        FileOutputStream(file).use { fos ->
 
-            // fmt sub-chunk
-            buffer.put('f'.code.toByte())
-            buffer.put('m'.code.toByte())
-            buffer.put('t'.code.toByte())
-            buffer.put(' '.code.toByte())
-            buffer.putInt(16)                   // Subchunk1Size (16 for PCM)
-            buffer.putShort(1)                  // AudioFormat (1 = PCM)
-            buffer.putShort(channelCount.toShort())
-            buffer.putInt(sampleRate)
-            buffer.putInt(byteRate)
-            buffer.putShort(blockAlign.toShort())
-            buffer.putShort(bitsPerSample.toShort())
+            val header = ByteBuffer.allocate(44)
+                .order(ByteOrder.LITTLE_ENDIAN)
 
-            // data sub-chunk
-            buffer.put('d'.code.toByte())
-            buffer.put('a'.code.toByte())
-            buffer.put('t'.code.toByte())
-            buffer.put('a'.code.toByte())
-            buffer.putInt(dataSize)
+            header.put("RIFF".toByteArray())
+            header.putInt(totalSize)
+            header.put("WAVE".toByteArray())
 
-            fos.write(buffer.array())
-            fos.write(pcmData)
+            header.put("fmt ".toByteArray())
+            header.putInt(16)
+            header.putShort(1)
+            header.putShort(channels.toShort())
+            header.putInt(sampleRate)
+            header.putInt(byteRate)
+            header.putShort(blockAlign.toShort())
+            header.putShort(bitsPerSample.toShort())
+
+            header.put("data".toByteArray())
+            header.putInt(dataSize)
+
+            fos.write(header.array())
+            fos.write(pcm)
         }
     }
 }

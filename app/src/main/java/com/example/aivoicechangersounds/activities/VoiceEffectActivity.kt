@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
@@ -15,7 +16,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
-import com.example.aivoicechangersounds.data.models.GenerateVoiceResponse
+import com.example.aivoicechangersounds.data.models.GenerateAudioResponse
 import com.example.aivoicechangersounds.Viewmodels.VoiceEffectViewModel
 import com.example.aivoicechangersounds.ui.voiceai.VoiceGridAdapter
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -58,6 +59,10 @@ class VoiceEffectActivity : AppCompatActivity() {
 
         viewModel.setAudioFilePath(audioFilePath)
 
+        val transcribedText = intent.getStringExtra(RecordingActivity.EXTRA_TRANSCRIBED_TEXT) ?: ""
+        viewModel.setTranscribedText(transcribedText)
+        Log.d("Debugging  Option","The text is $transcribedText")
+
         setupToolbar()
         setupAudioControls()
         setupVoiceGrid()
@@ -77,11 +82,6 @@ class VoiceEffectActivity : AppCompatActivity() {
             onTickClicked()
         }
     }
-
-    /**
-     * Called when the tick/confirm button in toolbar is pressed.
-     * Validates that a voice is selected, then sends to backend.
-     */
     private fun onTickClicked() {
         if (viewModel.selectedVoice.value == null) {
             Toast.makeText(this, "Please select a voice first", Toast.LENGTH_SHORT).show()
@@ -228,11 +228,12 @@ class VoiceEffectActivity : AppCompatActivity() {
         savingDialog = null
     }
 
-    private fun navigateToAudioPlayer(response: GenerateVoiceResponse) {
+    private fun navigateToAudioPlayer(response: GenerateAudioResponse) {
         val intent = Intent(this, AudioPlayerActivity::class.java).apply {
+            putExtra(AudioPlayerActivity.EXTRA_FILE_PATH, response.filePath)
             putExtra(AudioPlayerActivity.EXTRA_AUDIO_URL, response.audioUrl)
             putExtra(AudioPlayerActivity.EXTRA_AUDIO_BASE64, response.audioBase64)
-            putExtra(AudioPlayerActivity.EXTRA_VOICE_NAME, response.voiceName ?: viewModel.selectedVoice.value?.name ?: "")
+            putExtra(AudioPlayerActivity.EXTRA_VOICE_NAME, viewModel.selectedVoice.value?.name ?: "")
             putExtra(AudioPlayerActivity.EXTRA_INPUT_TEXT, "Voice Effect Applied")
         }
         startActivity(intent)

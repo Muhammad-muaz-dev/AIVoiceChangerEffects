@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aivoicechangersounds.data.models.RecordingState
 import com.example.aivoicechangersounds.data.repository.AudioRecorderRepository
+import com.example.aivoicechangersounds.utils.SpeechToTextHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
@@ -16,7 +17,8 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class RecordingViewModel @Inject constructor(
-    private val audioRecorderRepository: AudioRecorderRepository
+    private val audioRecorderRepository: AudioRecorderRepository,
+    private val speechToTextHelper: SpeechToTextHelper
 ) : ViewModel() {
 
     private val _recordingState = MutableStateFlow<RecordingState>(RecordingState.Idle)
@@ -44,10 +46,12 @@ class RecordingViewModel @Inject constructor(
     private fun startRecording() {
         viewModelScope.launch {
             try {
+                speechToTextHelper.startListening()
                 currentFilePath = audioRecorderRepository.startRecording()
                 _recordingState.value = RecordingState.Recording
                 startTimer()
             } catch (e: Exception) {
+                speechToTextHelper.stopListening()
                 _recordingState.value = RecordingState.Error(
                     e.message ?: "Failed to start recording"
                 )
@@ -86,6 +90,7 @@ class RecordingViewModel @Inject constructor(
     fun onCancelClicked() {
         viewModelScope.launch {
             try {
+                speechToTextHelper.stopListening()
                 audioRecorderRepository.cancelRecording()
                 stopTimer()
                 _elapsedTime.value = 0L
@@ -105,14 +110,16 @@ class RecordingViewModel @Inject constructor(
     fun onDoneClicked() {
         viewModelScope.launch {
             try {
+                val transcribedText = speechToTextHelper.stopListening()
                 val filePath = audioRecorderRepository.stopRecording()
                 stopTimer()
                 if (filePath != null) {
-                    _recordingState.value = RecordingState.Done(filePath)
+                    _recordingState.value = RecordingState.Done(filePath, transcribedText)
                 } else {
                     _recordingState.value = RecordingState.Error("Recording file not found")
                 }
             } catch (e: Exception) {
+                speechToTextHelper.stopListening()
                 _recordingState.value = RecordingState.Error(
                     e.message ?: "Failed to stop recording"
                 )
@@ -148,6 +155,7 @@ class RecordingViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
+        speechToTextHelper.stopListening()
         viewModelScope.launch {
             try {
                 audioRecorderRepository.cancelRecording()

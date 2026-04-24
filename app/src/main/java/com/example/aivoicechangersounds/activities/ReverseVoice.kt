@@ -11,12 +11,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.example.aivoicechangersounds.Viewmodels.RecordingViewModel
 import com.example.aivoicechangersounds.Viewmodels.ViewModelReverseVoice
 import com.example.aivoicechangersounds.data.models.RecordingState
 import com.voicechanger.app.R
@@ -24,7 +21,6 @@ import com.voicechanger.app.databinding.ActivityRecordingBinding
 import com.voicechanger.app.ui.preview.ActivityPreview
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import kotlin.getValue
 
 @AndroidEntryPoint
 class ReverseVoice : AppCompatActivity() {
@@ -129,7 +125,6 @@ class ReverseVoice : AppCompatActivity() {
     }
 
     private fun navigateToNextScreen(filePath: String) {
-        // Replace VoiceEffectsActivity::class.java with your actual next Activity
         val intent = Intent(this, ActivityPreview::class.java).apply {
             putExtra(EXTRA_AUDIO_FILE_PATH, filePath)
         }

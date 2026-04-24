@@ -5,8 +5,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:name="com.example.aivoicechangersounds.androidhilt.Myapp"
@@ -16,6 +16,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.AIVoiceChanger"
         android:usesCleartextTraffic="true">
+        <activity
+            android:name="com.example.aivoicechangersounds.activities.ActivitySetting"
+            android:exported="false" />
+        <activity
+            android:name="com.example.aivoicechangersounds.activities.ActivityFile"
+            android:exported="false" />
         <activity
             android:name="com.example.aivoicechangersounds.activities.ActivityVoiceTranslate"
             android:exported="false" />

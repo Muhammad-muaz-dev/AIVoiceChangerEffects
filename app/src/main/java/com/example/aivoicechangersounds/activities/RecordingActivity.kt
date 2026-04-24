@@ -107,7 +107,7 @@ class RecordingActivity : AppCompatActivity() {
             }
 
             is RecordingState.Done -> {
-                navigateToNextScreen(state.filePath)
+                navigateToNextScreen(state.filePath, state.transcribedText)
             }
 
             is RecordingState.Cancelled -> {
@@ -125,10 +125,10 @@ class RecordingActivity : AppCompatActivity() {
         }
     }
 
-    private fun navigateToNextScreen(filePath: String) {
-        // Replace VoiceEffectsActivity::class.java with your actual next Activity
+    private fun navigateToNextScreen(filePath: String, transcribedText: String) {
         val intent = Intent(this, VoiceEffectActivity::class.java).apply {
             putExtra(EXTRA_AUDIO_FILE_PATH, filePath)
+            putExtra(EXTRA_TRANSCRIBED_TEXT, transcribedText)
         }
         startActivity(intent)
         finish()
@@ -143,5 +143,6 @@ class RecordingActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_AUDIO_FILE_PATH = "extra_audio_file_path"
+        const val EXTRA_TRANSCRIBED_TEXT = "extra_transcribed_text"
     }
 }
