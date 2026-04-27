@@ -16,8 +16,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.io.File
 
 
 @HiltViewModel
@@ -173,20 +173,35 @@ class VoiceEffectViewModel @Inject constructor(
     // --- Generate voice effect via TTS (audio → text → API) ---
     fun generateVoiceEffect() {
         val voice = _selectedVoice.value ?: return
-        val text = transcribedText
-        Log.d("Debugging  Option","The text appearing is '$text', voiceId='${voice.id}'")
-
-        if (text.isNullOrBlank()) {
-            Log.e("Debugging  Option", "transcribedText is null or blank — STT did not capture any speech")
-            _generateError.value = "Could not transcribe audio. Please try recording again."
-            return
-        }
+        val path = audioFilePath
+        val text = transcribedText?.trim()
+        Log.d("Debugging  Option","voiceId='${voice.id}', filePath='$path', text='$text'")
 
         viewModelScope.launch {
             _generating.value = true
             _generateError.value = null
 
-            val result = voiceRepository.generateAudio(text, voice.id, "effect")
+            val result = if (!path.isNullOrBlank() && File(path).exists()) {
+                // Primary flow for VoiceEffect screen: upload recorded audio + selected voice
+                when (val audioResult = voiceEffectRepository.generateVoice(voice.id, path)) {
+                    is Resource.Success -> {
+                        Resource.Success(
+                            GenerateAudioResponse(
+                                audioUrl = audioResult.data.audioUrl,
+                                audioBase64 = audioResult.data.audioBase64,
+                                filePath = null
+                            )
+                        )
+                    }
+                    is Resource.Error -> Resource.Error(audioResult.message)
+                    else -> Resource.Error("Failed to generate voice effect")
+                }
+            } else if (!text.isNullOrBlank()) {
+                // Fallback only when recorded file is unavailable
+                voiceRepository.generateAudio(text, voice.id, "effect")
+            } else {
+                Resource.Error("Recorded audio not found. Please record again.")
+            }
 
             when (result) {
                 is Resource.Success -> {

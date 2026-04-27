@@ -58,7 +58,7 @@ class RecordingViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 currentFilePath = audioRecorderRepository.startRecording()
-                speechToTextHelper.startListening()
+                speechToTextHelper.startListening(resetTranscript = true)
                 _recordingState.value = RecordingState.Recording
                 startTimer()
                 startAmplitudeUpdates()
@@ -90,7 +90,7 @@ class RecordingViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 audioRecorderRepository.resumeRecording()
-                speechToTextHelper.startListening()
+                speechToTextHelper.startListening(resetTranscript = false)
                 _recordingState.value = RecordingState.Recording
                 startTimer()
                 startAmplitudeUpdates()

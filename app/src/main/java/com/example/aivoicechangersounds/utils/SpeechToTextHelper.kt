@@ -44,7 +44,7 @@ class SpeechToTextHelper @Inject constructor(
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    fun startListening(language: String? = null) {
+    fun startListening(language: String? = null, resetTranscript: Boolean = true) {
 
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
             Log.w(TAG, "Speech recognition not available")
@@ -53,12 +53,16 @@ class SpeechToTextHelper @Inject constructor(
 
         forceDestroyRecognizer()
 
-        _transcribedText.value = ""
+        if (resetTranscript) {
+            _transcribedText.value = ""
+        }
         _rms.value = 0f
         shouldContinueListening = true
         retryCount = 0
         currentLanguage = language
-        currentPartialText = ""
+        if (resetTranscript) {
+            currentPartialText = ""
+        }
 
         mainHandler.postDelayed({
             createAndStartRecognizer()
