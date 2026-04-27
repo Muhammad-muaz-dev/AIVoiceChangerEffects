@@ -79,6 +79,11 @@ class ActivityVoiceTranslate : AppCompatActivity() {
         setupClickListeners()
         observeViewModel()
     }
+    private fun setUpToolbar(){
+        binding.btnback.setOnClickListener {
+            finish()
+        }
+    }
 
     private fun setupRecyclerView() {
         historyAdapter = TranslationHistoryAdapter(historyItems) { position ->

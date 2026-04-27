@@ -9,25 +9,29 @@
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbarAIVoices"
         android:layout_width="match_parent"
+        android:paddingTop="20dp"
         android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton
             android:id="@+id/backarrow"
-            android:layout_width="20dp"
-            android:layout_height="15dp"
-            android:src="@drawable/ic_backarrow__2_"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="20dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:backgroundTint="@android:color/transparent"/>
+            android:backgroundTint="@android:color/transparent"
+            android:src="@drawable/ic_backarrow__2_" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Ai Voice"
-            android:textSize="20sp"
-            android:textColor="@color/black"
+            android:layout_marginStart="30dp"
             android:fontFamily="@font/outfitbold"
-            android:layout_marginStart="30dp"/>
+            android:text="Ai Voice"
+            android:textColor="@color/black"
+            android:textSize="20sp" />
     </androidx.appcompat.widget.Toolbar>
 
     <androidx.core.widget.NestedScrollView

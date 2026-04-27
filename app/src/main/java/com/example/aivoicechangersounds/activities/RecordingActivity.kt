@@ -50,6 +50,11 @@ class RecordingActivity : AppCompatActivity() {
         setupClickListeners()
         observeViewModel()
     }
+    private fun setUpToolbar(){
+        binding.btnback.setOnClickListener {
+            finish()
+        }
+    }
 
     private fun setupClickListeners() {
         binding.btnaudio.setOnClickListener {
