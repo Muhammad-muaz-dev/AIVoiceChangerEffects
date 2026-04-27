@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.ViewGroup
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -52,9 +53,7 @@ class AudioPlayerActivity : AppCompatActivity() {
 
     private fun setupToolbar() {
 
-        binding.backing.setOnClickListener {
-            finish()
-        }
+        binding.backing.setOnClickListener { finish() }
     }
 
     private fun loadAudioData() {
@@ -183,6 +182,10 @@ class AudioPlayerActivity : AppCompatActivity() {
     private fun showSaveFileDialog() {
         val dialog = BottomSheetDialog(this)
         val sheetBinding = DialogueSaveFileBinding.inflate(layoutInflater)
+        dialog?.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
         dialog.setContentView(sheetBinding.root)
 
         val timestamp = System.currentTimeMillis()

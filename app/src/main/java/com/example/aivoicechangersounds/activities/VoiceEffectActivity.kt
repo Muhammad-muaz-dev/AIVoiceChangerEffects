@@ -26,6 +26,7 @@ import com.voicechanger.app.databinding.DialogueSavingAudioFileBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
+import java.io.File
 
 @AndroidEntryPoint
 class VoiceEffectActivity : AppCompatActivity() {
@@ -60,8 +61,7 @@ class VoiceEffectActivity : AppCompatActivity() {
             return
         }
 
-        // Only prepare audio preview if a real file exists (not the STT-only placeholder)
-        if (audioFilePath.isNotBlank() && audioFilePath != "stt_only") {
+        if (audioFilePath.isNotBlank() && File(audioFilePath).exists()) {
             viewModel.setAudioFilePath(audioFilePath)
         }
         viewModel.setTranscribedText(transcribedText)
@@ -76,9 +76,7 @@ class VoiceEffectActivity : AppCompatActivity() {
     }
 
     private fun setupToolbar() {
-        binding.backarrow.setOnClickListener {
-            finish()
-        }
+        binding.backarrow.setOnClickListener { finish() }
 
         // ic_tick2 button — send recorded audio + selected voice to backend
         binding.toolbarAIVoices.findViewById<View>(R.id.btnTick)?.setOnClickListener {
@@ -97,6 +95,10 @@ class VoiceEffectActivity : AppCompatActivity() {
     private fun setupAudioControls() {
         // Play/Replay button
         binding.buttonReplay.setOnClickListener {
+            if (viewModel.totalDuration.value <= 0) {
+                Toast.makeText(this, "Recorded audio not available yet", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             viewModel.playPauseAudio()
         }
 
@@ -112,8 +114,6 @@ class VoiceEffectActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
-        // Volume button — toggle volume up/down on each click
-        // You can replace this with a volume slider dialog if preferred
         binding.root.findViewById<View>(R.id.btnVolume)?.setOnClickListener {
             val currentVolume = viewModel.volume.value
             if (currentVolume > 0.5f) {

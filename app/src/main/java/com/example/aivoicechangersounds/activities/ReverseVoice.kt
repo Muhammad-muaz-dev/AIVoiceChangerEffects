@@ -45,9 +45,12 @@ class ReverseVoice : AppCompatActivity() {
         enableEdgeToEdge()
         binding = ActivityRecordingBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
+        setUpToolbar()
         setupClickListeners()
         observeViewModel()
+    }
+    private fun setUpToolbar(){
+        binding.btnback.setOnClickListener { finish() }
     }
 
     private fun setupClickListeners() {

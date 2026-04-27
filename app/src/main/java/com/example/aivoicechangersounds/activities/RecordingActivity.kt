@@ -20,7 +20,6 @@ import com.voicechanger.app.databinding.ActivityRecordingBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import android.Manifest
-import kotlin.jvm.java
 
 @AndroidEntryPoint
 class RecordingActivity : AppCompatActivity() {
@@ -46,14 +45,12 @@ class RecordingActivity : AppCompatActivity() {
         enableEdgeToEdge()
         binding = ActivityRecordingBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
+        setUpToolbar()
         setupClickListeners()
         observeViewModel()
     }
     private fun setUpToolbar(){
-        binding.btnback.setOnClickListener {
-            finish()
-        }
+        binding.btnback.setOnClickListener { finish() }
     }
 
     private fun setupClickListeners() {
@@ -87,6 +84,17 @@ class RecordingActivity : AppCompatActivity() {
                         binding.tvTimer.text = time
                     }
                 }
+                launch {
+                    viewModel.liveAmplitude.collect { amplitude ->
+                        val isRecording = viewModel.recordingState.value is RecordingState.Recording
+                        val scaledAmplitude = if (!isRecording || amplitude <= 0) {
+                            0
+                        } else {
+                            amplitude.coerceIn(0, 32767)
+                        }
+                        binding.waveformView.addAmplitude(scaledAmplitude)
+                    }
+                }
             }
         }
     }
@@ -97,6 +105,7 @@ class RecordingActivity : AppCompatActivity() {
                 binding.btnaudio.setImageResource(R.drawable.ic_audio)
                 binding.btncancel.visibility = View.GONE
                 binding.btndone.visibility = View.GONE
+                binding.waveformView.reset()
             }
 
             is RecordingState.Recording -> {
@@ -119,6 +128,7 @@ class RecordingActivity : AppCompatActivity() {
                 binding.btnaudio.setImageResource(R.drawable.ic_audio)
                 binding.btncancel.visibility = View.GONE
                 binding.btndone.visibility = View.GONE
+                binding.waveformView.reset()
             }
 
             is RecordingState.Error -> {
@@ -126,6 +136,7 @@ class RecordingActivity : AppCompatActivity() {
                 binding.btnaudio.setImageResource(R.drawable.ic_audio)
                 binding.btncancel.visibility = View.GONE
                 binding.btndone.visibility = View.GONE
+                binding.waveformView.reset()
             }
         }
     }

@@ -9,7 +9,7 @@
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbarAIVoices"
         android:layout_width="match_parent"
-        android:paddingTop="20dp"
+        android:paddingTop="10dp"
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -25,6 +25,7 @@
             android:src="@drawable/ic_backarrow__2_" />
 
         <TextView
+            android:id="@+id/toolcontent"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="30dp"
@@ -68,13 +69,16 @@
                     android:id="@+id/TtoChange"
                     android:layout_width="match_parent"
                     android:layout_height="125dp"
-                    android:hint="You can type words, sentences, or scripts"
                     android:background="@android:color/transparent"
                     android:gravity="top|start"
+                    android:hint="You can type words, sentences, or scripts"
                     android:inputType="textMultiLine"
                     android:padding="15dp"
                     android:textColor="@color/black"
-                    app:layout_constraintTop_toTopOf="parent"/>
+                    android:textCursorDrawable="@null"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
 
                 <LinearLayout
                     android:id="@+id/langselection"

@@ -3,6 +3,7 @@ package com.example.aivoicechangersounds.activities
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.example.aivoicechangersounds.data.models.VoiceAIMode
 import com.voicechanger.app.databinding.ActivityMainBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlin.jvm.java
@@ -21,11 +22,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         binding.cardvoicechange.setOnClickListener {
-            startActivity(Intent(this, VoiceAIActivity::class.java))
+            val intent = Intent(this, VoiceAIActivity::class.java)
+            intent.putExtra("mode", VoiceAIMode.TEXT_TO_SPEECH.name)
+            startActivity(intent)
         }
 
         binding.cardttv.setOnClickListener {
-           startActivity(Intent(this, VoiceAIActivity::class.java))
+            val intent = Intent(this, VoiceAIActivity::class.java)
+            intent.putExtra("mode", VoiceAIMode.TRANSLATE.name)
+            startActivity(intent)
         }
 
         binding.cardrav.setOnClickListener {
@@ -39,6 +44,11 @@ class MainActivity : AppCompatActivity() {
         }
         binding.cardfile.setOnClickListener {
             startActivity(Intent(this, ActivityFile::class.java))
+        }
+        binding.cardve.setOnClickListener {
+            val intent = Intent(this, VoiceAIActivity::class.java)
+            intent.putExtra("mode", VoiceAIMode.VOICE_CLONE.name)
+            startActivity(intent)
         }
     }
 }

@@ -9,7 +9,7 @@
     android:id="@+id/tool"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingTop="20dp"
+    android:paddingTop="10dp"
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintTop_toTopOf="parent">
@@ -32,13 +32,11 @@
         />
 </Toolbar>
     <!-- Waveform placeholder -->
-    <ImageView
+    <com.example.aivoicechangersounds.utils.RecorderVisualizerView
         android:id="@+id/waveformView"
         android:layout_width="match_parent"
         android:layout_height="120dp"
         android:layout_marginTop="80dp"
-        android:src="@drawable/ic_wave"
-        android:background="@color/background"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tool"/>

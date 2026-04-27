@@ -3,7 +3,9 @@ package com.example.aivoicechangersounds.activities
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.View
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -14,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.aivoicechangersounds.Viewmodels.VoiceAIViewModel
 import com.example.aivoicechangersounds.data.models.Language
 import com.example.aivoicechangersounds.data.models.Voice
+import com.example.aivoicechangersounds.data.models.VoiceAIMode
 import com.example.aivoicechangersounds.ui.voiceai.LanguageAdapter
 import com.example.aivoicechangersounds.ui.voiceai.VoiceGridAdapter
 import com.example.aivoicechangersounds.utils.Resource
@@ -22,25 +25,28 @@ import com.voicechanger.app.R
 import com.voicechanger.app.databinding.ActivityVoiceAiactivityBinding
 import com.voicechanger.app.databinding.BottomSheetLanguagesBinding
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @AndroidEntryPoint
 class VoiceAIActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityVoiceAiactivityBinding
     private val viewModel: VoiceAIViewModel by viewModels()
+    private lateinit var currentMode: VoiceAIMode
 
     private lateinit var voiceAdapter: VoiceGridAdapter
 
     private var languageList: List<Language> = emptyList()
+    private var allVoices: List<Voice> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        currentMode = VoiceAIMode.valueOf(
+            intent.getStringExtra("mode") ?: VoiceAIMode.TEXT_TO_SPEECH.name
+        )
 
         binding = ActivityVoiceAiactivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
+        configureScreenForMode()
         setupToolbar()
         setupVoiceGrid()
         setupTextWatcher()
@@ -50,7 +56,26 @@ class VoiceAIActivity : AppCompatActivity() {
 
         binding.btnGenerateVoice.isEnabled = false
     }
+    private fun configureScreenForMode() {
 
+        when (currentMode) {
+
+            VoiceAIMode.TEXT_TO_SPEECH -> {
+                binding.toolcontent.text = "Ai Voice"
+                binding.T2.text="Choose Ai Voice"
+            }
+
+            VoiceAIMode.TRANSLATE -> {
+                binding.toolcontent.text = " Text to Voice"
+                binding.T2.text="Voice Effects"
+            }
+
+            VoiceAIMode.VOICE_CLONE -> {
+                binding.toolcontent.text = "Ai Voice Effects"
+                binding.T2.text="Ai Voice Effects"
+            }
+        }
+    }
     // ───────────────────────── Toolbar ─────────────────────────
     private fun setupToolbar() {
         binding.backarrow.setOnClickListener { finish() }
@@ -177,7 +202,8 @@ class VoiceAIActivity : AppCompatActivity() {
                     binding.progressVoices.visibility = View.GONE
                     binding.rvVoices.visibility = View.VISIBLE
 
-                    voiceAdapter.submitList(resource.data)
+                    allVoices = resource.data
+                    applyVoiceFilter()
 
                     Log.d("voices list", "resource: ${resource.data}")
 
@@ -197,6 +223,11 @@ class VoiceAIActivity : AppCompatActivity() {
         // SELECTED VOICE
         viewModel.selectedVoice.observe(this) { voice ->
             voiceAdapter.setSelectedVoice(voice)
+        }
+
+        // SELECTED LANGUAGE (client-side filtering using normalized code)
+        viewModel.selectedLanguage.observe(this) {
+            applyVoiceFilter()
         }
 
         // GENERATION RESULT
@@ -250,7 +281,30 @@ class VoiceAIActivity : AppCompatActivity() {
     // ───────────────────────── Dialog ─────────────────────────
     private var loadingDialog: AlertDialog? = null
 
+    private fun applyVoiceFilter() {
+        val selectedCode = viewModel.selectedLanguage.value?.code
+        if (selectedCode.isNullOrBlank()) {
+            voiceAdapter.submitList(allVoices)
+            return
+        }
+
+        val normalizedSelected = normalizeLanguageCode(selectedCode)
+        val filtered = allVoices.filter { voice ->
+            normalizeLanguageCode(voice.language) == normalizedSelected
+        }
+        voiceAdapter.submitList(filtered)
+    }
+
+    private fun normalizeLanguageCode(code: String?): String {
+        return code
+            ?.split("-")
+            ?.firstOrNull()
+            ?.lowercase()
+            .orEmpty()
+    }
+
     private fun showGeneratingDialog() {
+
         val view = layoutInflater.inflate(R.layout.dialog_generating_audio, null)
 
         loadingDialog = AlertDialog.Builder(this)
@@ -258,8 +312,16 @@ class VoiceAIActivity : AppCompatActivity() {
             .setCancelable(false)
             .create()
 
-        loadingDialog?.window?.setBackgroundDrawableResource(android.R.color.white)
         loadingDialog?.show()
+        loadingDialog?.window?.let { window ->
+            window.setBackgroundDrawableResource(android.R.color.transparent)
+            val params = window.attributes
+            params.width = (resources.displayMetrics.widthPixels * 0.8).toInt()
+            params.height = WindowManager.LayoutParams.WRAP_CONTENT
+            params.gravity = Gravity.CENTER
+            params.windowAnimations = android.R.style.Animation_Dialog
+            window.attributes = params
+        }
     }
 
     private fun hideGeneratingDialog() {

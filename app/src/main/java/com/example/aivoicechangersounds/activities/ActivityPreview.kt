@@ -66,9 +66,7 @@ class ActivityPreview : AppCompatActivity() {
     }
 
     private fun setupToolbar() {
-        binding.toolbarpreview.setNavigationOnClickListener {
-            finish()
-        }
+        binding.btnBacktoolbar.setOnClickListener { finish() }
     }
 
     private fun setupControls() {
@@ -107,13 +105,23 @@ class ActivityPreview : AppCompatActivity() {
         }
     }
 
-    /**
-     * Sets up kebab (three-dot) menu with Rename, Share, Delete options.
-     */
+
     private fun setupKebabMenu() {
         binding.menupreview.setOnClickListener { view ->
+
             val popupMenu = PopupMenu(this, view)
             popupMenu.menuInflater.inflate(R.menu.menu_preview_kebab, popupMenu.menu)
+
+            try {
+                val field = popupMenu.javaClass.getDeclaredField("mPopup")
+                field.isAccessible = true
+                val menuPopupHelper = field.get(popupMenu)
+                val method = menuPopupHelper.javaClass
+                    .getDeclaredMethod("setForceShowIcon", Boolean::class.java)
+                method.invoke(menuPopupHelper, true)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
 
             popupMenu.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
@@ -136,10 +144,6 @@ class ActivityPreview : AppCompatActivity() {
             popupMenu.show()
         }
     }
-
-    /**
-     * Shows a dialog with EditText for the user to enter a new file name.
-     */
     private fun showRenameDialog() {
         val currentName = viewModel.fileName.value
         val editText = EditText(this).apply {
@@ -164,9 +168,6 @@ class ActivityPreview : AppCompatActivity() {
             .show()
     }
 
-    /**
-     * Shares the audio file using Android's share intent.
-     */
     private fun shareAudioFile() {
         val filePath = viewModel.getAudioFilePath()
         if (filePath == null) {
@@ -194,10 +195,6 @@ class ActivityPreview : AppCompatActivity() {
 
         startActivity(Intent.createChooser(shareIntent, "Share Audio"))
     }
-
-    /**
-     * Shows a confirmation dialog before deleting the audio file.
-     */
     private fun showDeleteConfirmation() {
         AlertDialog.Builder(this)
             .setTitle("Delete File")

@@ -55,7 +55,7 @@ class VoiceAIViewModel @Inject constructor(
                     if (languages.isNotEmpty()) {
                         val defaultLang = languages.first()
                         _selectedLanguage.value = defaultLang
-                        loadVoices(defaultLang.code)
+                        loadVoices(null)
                     } else {
                         loadVoices(null)
                     }
@@ -86,7 +86,6 @@ class VoiceAIViewModel @Inject constructor(
     // ───────────────────────── Language Change ─────────────────────────
     fun selectLanguage(language: Language) {
         _selectedLanguage.value = language
-        loadVoices(language.code)
     }
 
     // ───────────────────────── Voice Select ─────────────────────────

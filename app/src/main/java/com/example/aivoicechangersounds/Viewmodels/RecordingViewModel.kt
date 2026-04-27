@@ -1,9 +1,9 @@
 package com.example.aivoicechangersounds.Viewmodels
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aivoicechangersounds.data.models.RecordingState
+import com.example.aivoicechangersounds.data.repository.AudioRecorderRepository
 import com.example.aivoicechangersounds.utils.SpeechToTextHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -14,22 +14,35 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-
 @HiltViewModel
 class RecordingViewModel @Inject constructor(
-    private val speechToTextHelper: SpeechToTextHelper
+    private val speechToTextHelper: SpeechToTextHelper,
+    private val audioRecorderRepository: AudioRecorderRepository
 ) : ViewModel() {
 
-    private val _recordingState = MutableStateFlow<RecordingState>(RecordingState.Idle)
+    private val _liveAmplitude = MutableStateFlow(0)
+    val liveAmplitude: StateFlow<Int> = _liveAmplitude.asStateFlow()
+
+    private val _recordingState =
+        MutableStateFlow<RecordingState>(RecordingState.Idle)
     val recordingState: StateFlow<RecordingState> = _recordingState.asStateFlow()
 
     private val _elapsedTime = MutableStateFlow(0L)
-    val elapsedTime: StateFlow<Long> = _elapsedTime.asStateFlow()
-
-    private val _formattedTime = MutableStateFlow("00:00")
-    val formattedTime: StateFlow<String> = _formattedTime.asStateFlow()
+    val formattedTime: StateFlow<String> = _elapsedTime
+        .asStateFlow()
+        .let { flow ->
+            MutableStateFlow("00:00").apply {
+                viewModelScope.launch {
+                    flow.collect { value ->
+                        this@apply.value = formatTime(value)
+                    }
+                }
+            }
+        }
 
     private var timerJob: Job? = null
+    private var amplitudeJob: Job? = null
+    private var currentFilePath: String? = null
 
     fun onAudioButtonClicked() {
         when (_recordingState.value) {
@@ -37,19 +50,19 @@ class RecordingViewModel @Inject constructor(
             is RecordingState.Cancelled -> startRecording()
             is RecordingState.Recording -> pauseRecording()
             is RecordingState.Paused -> resumeRecording()
-            else -> { /* no-op */ }
+            else -> {}
         }
     }
 
     private fun startRecording() {
         viewModelScope.launch {
             try {
-                Log.d(TAG, "Starting SpeechRecognizer (STT-only mode, no MediaRecorder)...")
+                currentFilePath = audioRecorderRepository.startRecording()
                 speechToTextHelper.startListening()
                 _recordingState.value = RecordingState.Recording
                 startTimer()
+                startAmplitudeUpdates()
             } catch (e: Exception) {
-                speechToTextHelper.stopListening()
                 _recordingState.value = RecordingState.Error(
                     e.message ?: "Failed to start recording"
                 )
@@ -57,51 +70,66 @@ class RecordingViewModel @Inject constructor(
         }
     }
 
-    companion object {
-        private const val TAG = "RecordingViewModel"
-    }
-
     private fun pauseRecording() {
-        _recordingState.value = RecordingState.Paused
-        pauseTimer()
+        viewModelScope.launch {
+            try {
+                audioRecorderRepository.pauseRecording()
+                speechToTextHelper.stopListening()
+                _recordingState.value = RecordingState.Paused
+                timerJob?.cancel()
+                stopAmplitudeUpdates()
+            } catch (e: Exception) {
+                _recordingState.value = RecordingState.Error(
+                    e.message ?: "Failed to pause recording"
+                )
+            }
+        }
     }
 
     private fun resumeRecording() {
-        _recordingState.value = RecordingState.Recording
-        startTimer()
+        viewModelScope.launch {
+            try {
+                audioRecorderRepository.resumeRecording()
+                speechToTextHelper.startListening()
+                _recordingState.value = RecordingState.Recording
+                startTimer()
+                startAmplitudeUpdates()
+            } catch (e: Exception) {
+                _recordingState.value = RecordingState.Error(
+                    e.message ?: "Failed to resume recording"
+                )
+            }
+        }
     }
 
     fun onCancelClicked() {
         viewModelScope.launch {
-            try {
-                speechToTextHelper.stopListening()
-                stopTimer()
-                _elapsedTime.value = 0L
-                _formattedTime.value = "00:00"
-                _recordingState.value = RecordingState.Cancelled
-                _recordingState.value = RecordingState.Idle
-            } catch (e: Exception) {
-                _recordingState.value = RecordingState.Error(
-                    e.message ?: "Failed to cancel recording"
-                )
-            }
+            speechToTextHelper.stopListening()
+            audioRecorderRepository.cancelRecording()
+            stopTimer()
+            stopAmplitudeUpdates()
+            _elapsedTime.value = 0
+            currentFilePath = null
+            _recordingState.value = RecordingState.Idle
         }
     }
 
     fun onDoneClicked() {
         viewModelScope.launch {
             try {
-                Log.d(TAG, "onDoneClicked — stopping STT...")
-                val transcribedText = speechToTextHelper.stopListening()
-                Log.d(TAG, "STT stopped, transcribedText='$transcribedText', length=${transcribedText.length}")
+                val text = speechToTextHelper.stopListening()
+                val filePath = audioRecorderRepository.stopRecording()
                 stopTimer()
-                Log.d(TAG, "Transitioning to Done state with text='$transcribedText'")
-                _recordingState.value = RecordingState.Done("stt_only", transcribedText)
+                stopAmplitudeUpdates()
+                _elapsedTime.value = 0
+                if (filePath.isNullOrBlank()) {
+                    _recordingState.value = RecordingState.Error("Recording file not found")
+                } else {
+                    _recordingState.value = RecordingState.Done(filePath, text)
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Error in onDoneClicked: ${e.message}", e)
-                speechToTextHelper.stopListening()
                 _recordingState.value = RecordingState.Error(
-                    e.message ?: "Failed to stop recording"
+                    e.message ?: "Failed to finish recording"
                 )
             }
         }
@@ -111,30 +139,43 @@ class RecordingViewModel @Inject constructor(
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
             while (true) {
-                delay(1000L)
+                delay(1000)
                 _elapsedTime.value += 1
-                _formattedTime.value = formatTime(_elapsedTime.value)
             }
         }
-    }
-
-    private fun pauseTimer() {
-        timerJob?.cancel()
     }
 
     private fun stopTimer() {
         timerJob?.cancel()
     }
 
-    private fun formatTime(totalSeconds: Long): String {
-        val minutes = totalSeconds / 60
-        val seconds = totalSeconds % 60
-        return String.format("%02d:%02d", minutes, seconds)
+    private fun startAmplitudeUpdates() {
+        amplitudeJob?.cancel()
+        amplitudeJob = viewModelScope.launch {
+            while (_recordingState.value is RecordingState.Recording) {
+                _liveAmplitude.value = audioRecorderRepository.getMaxAmplitude()
+                delay(80)
+            }
+        }
+    }
+
+    private fun stopAmplitudeUpdates() {
+        amplitudeJob?.cancel()
+        _liveAmplitude.value = 0
+    }
+
+    private fun formatTime(seconds: Long): String {
+        val m = seconds / 60
+        val s = seconds % 60
+        return String.format("%02d:%02d", m, s)
     }
 
     override fun onCleared() {
         super.onCleared()
-        timerJob?.cancel()
         speechToTextHelper.stopListening()
+        stopAmplitudeUpdates()
+        viewModelScope.launch {
+            audioRecorderRepository.cancelRecording()
+        }
     }
 }
