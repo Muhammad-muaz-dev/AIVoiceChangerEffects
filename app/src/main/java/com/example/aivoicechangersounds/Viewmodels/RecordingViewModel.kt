@@ -1,9 +1,9 @@
 package com.example.aivoicechangersounds.Viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aivoicechangersounds.data.models.RecordingState
-import com.example.aivoicechangersounds.data.repository.AudioRecorderRepository
 import com.example.aivoicechangersounds.utils.SpeechToTextHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -17,7 +17,6 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class RecordingViewModel @Inject constructor(
-    private val audioRecorderRepository: AudioRecorderRepository,
     private val speechToTextHelper: SpeechToTextHelper
 ) : ViewModel() {
 
@@ -31,7 +30,6 @@ class RecordingViewModel @Inject constructor(
     val formattedTime: StateFlow<String> = _formattedTime.asStateFlow()
 
     private var timerJob: Job? = null
-    private var currentFilePath: String? = null
 
     fun onAudioButtonClicked() {
         when (_recordingState.value) {
@@ -46,8 +44,8 @@ class RecordingViewModel @Inject constructor(
     private fun startRecording() {
         viewModelScope.launch {
             try {
+                Log.d(TAG, "Starting SpeechRecognizer (STT-only mode, no MediaRecorder)...")
                 speechToTextHelper.startListening()
-                currentFilePath = audioRecorderRepository.startRecording()
                 _recordingState.value = RecordingState.Recording
                 startTimer()
             } catch (e: Exception) {
@@ -59,45 +57,28 @@ class RecordingViewModel @Inject constructor(
         }
     }
 
+    companion object {
+        private const val TAG = "RecordingViewModel"
+    }
+
     private fun pauseRecording() {
-        viewModelScope.launch {
-            try {
-                audioRecorderRepository.pauseRecording()
-                _recordingState.value = RecordingState.Paused
-                pauseTimer()
-            } catch (e: Exception) {
-                _recordingState.value = RecordingState.Error(
-                    e.message ?: "Failed to pause recording"
-                )
-            }
-        }
+        _recordingState.value = RecordingState.Paused
+        pauseTimer()
     }
 
     private fun resumeRecording() {
-        viewModelScope.launch {
-            try {
-                audioRecorderRepository.resumeRecording()
-                _recordingState.value = RecordingState.Recording
-                startTimer()
-            } catch (e: Exception) {
-                _recordingState.value = RecordingState.Error(
-                    e.message ?: "Failed to resume recording"
-                )
-            }
-        }
+        _recordingState.value = RecordingState.Recording
+        startTimer()
     }
 
     fun onCancelClicked() {
         viewModelScope.launch {
             try {
                 speechToTextHelper.stopListening()
-                audioRecorderRepository.cancelRecording()
                 stopTimer()
                 _elapsedTime.value = 0L
                 _formattedTime.value = "00:00"
-                currentFilePath = null
                 _recordingState.value = RecordingState.Cancelled
-                // Reset to Idle so user can record again
                 _recordingState.value = RecordingState.Idle
             } catch (e: Exception) {
                 _recordingState.value = RecordingState.Error(
@@ -111,13 +92,9 @@ class RecordingViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val transcribedText = speechToTextHelper.stopListening()
-                val filePath = audioRecorderRepository.stopRecording()
+                Log.d(TAG, "STT stopped, transcribedText='$transcribedText'")
                 stopTimer()
-                if (filePath != null) {
-                    _recordingState.value = RecordingState.Done(filePath, transcribedText)
-                } else {
-                    _recordingState.value = RecordingState.Error("Recording file not found")
-                }
+                _recordingState.value = RecordingState.Done("stt_only", transcribedText)
             } catch (e: Exception) {
                 speechToTextHelper.stopListening()
                 _recordingState.value = RecordingState.Error(
@@ -156,10 +133,5 @@ class RecordingViewModel @Inject constructor(
         super.onCleared()
         timerJob?.cancel()
         speechToTextHelper.stopListening()
-        viewModelScope.launch {
-            try {
-                audioRecorderRepository.cancelRecording()
-            } catch (_: Exception) { }
-        }
     }
 }

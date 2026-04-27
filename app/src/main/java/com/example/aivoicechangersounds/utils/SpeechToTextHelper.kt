@@ -3,6 +3,8 @@ package com.example.aivoicechangersounds.utils
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -21,52 +23,85 @@ class SpeechToTextHelper @Inject constructor(
 
     companion object {
         private const val TAG = "SpeechToTextHelper"
+        private const val MAX_RETRIES = 8
+        private const val RETRY_DELAY_MS = 1000L
+        private const val RECREATE_DELAY_MS = 500L
     }
 
     private var speechRecognizer: SpeechRecognizer? = null
     private val _transcribedText = MutableStateFlow("")
     val transcribedText: StateFlow<String> = _transcribedText.asStateFlow()
 
+    private val _isReady = MutableStateFlow(false)
+    val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
+
     private var shouldContinueListening = false
     private var isCurrentlyListening = false
+    private var retryCount = 0
+    private var currentLanguage: String? = null
 
-    /**
-     * Starts speech recognition. Call from Main thread.
-     * Resets any previously accumulated text.
-     */
-    fun startListening() {
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    fun startListening(language: String? = null) {
+        Log.d(TAG, "startListening() called, language=$language")
+
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
             Log.w(TAG, "Speech recognition not available on this device")
             return
         }
 
+        // Full cleanup of any previous session
+        destroyRecognizer()
+
         _transcribedText.value = ""
+        _isReady.value = false
         shouldContinueListening = true
-        createAndStartRecognizer()
+        isCurrentlyListening = false
+        retryCount = 0
+        currentLanguage = language
+
+        // Small delay before creating a fresh recognizer to avoid device-level conflicts
+        mainHandler.postDelayed({
+            createAndStartRecognizer()
+        }, RECREATE_DELAY_MS)
     }
+
     fun stopListening(): String {
+        Log.d(TAG, "stopListening() called")
         shouldContinueListening = false
         isCurrentlyListening = false
+        _isReady.value = false
+        mainHandler.removeCallbacksAndMessages(null)
 
+        destroyRecognizer()
+
+        val result = _transcribedText.value
+        Log.d(TAG, "Final transcribed text: '$result'")
+        return result
+    }
+
+    private fun destroyRecognizer() {
         try {
+            speechRecognizer?.setRecognitionListener(null)
             speechRecognizer?.stopListening()
             speechRecognizer?.cancel()
             speechRecognizer?.destroy()
         } catch (e: Exception) {
-            Log.w(TAG, "Error stopping recognizer: ${e.message}")
+            Log.w(TAG, "Error destroying recognizer: ${e.message}")
         }
         speechRecognizer = null
-
-        val result = _transcribedText.value
-        Log.d(TAG, "Final transcribed text: $result")
-        return result
     }
 
     private fun createAndStartRecognizer() {
-        if (!shouldContinueListening) return
+        if (!shouldContinueListening) {
+            Log.d(TAG, "createAndStartRecognizer: shouldContinueListening=false, skipping")
+            return
+        }
 
         try {
-            speechRecognizer?.destroy()
+            // Destroy old instance cleanly before creating new one
+            destroyRecognizer()
+
             speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
 
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -76,6 +111,9 @@ class SpeechToTextHelper @Inject constructor(
                 )
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                if (!currentLanguage.isNullOrBlank()) {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, currentLanguage)
+                }
                 putExtra(
                     RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,
                     15000L
@@ -93,6 +131,8 @@ class SpeechToTextHelper @Inject constructor(
             speechRecognizer?.setRecognitionListener(object : RecognitionListener {
                 override fun onReadyForSpeech(params: Bundle?) {
                     isCurrentlyListening = true
+                    _isReady.value = true
+                    retryCount = 0
                     Log.d(TAG, "Ready for speech")
                 }
 
@@ -100,13 +140,9 @@ class SpeechToTextHelper @Inject constructor(
                     Log.d(TAG, "Speech started")
                 }
 
-                override fun onRmsChanged(rmsdB: Float) {
-                    // No-op: audio level changes
-                }
+                override fun onRmsChanged(rmsdB: Float) {}
 
-                override fun onBufferReceived(buffer: ByteArray?) {
-                    // No-op
-                }
+                override fun onBufferReceived(buffer: ByteArray?) {}
 
                 override fun onEndOfSpeech() {
                     Log.d(TAG, "Speech ended")
@@ -127,14 +163,30 @@ class SpeechToTextHelper @Inject constructor(
                         SpeechRecognizer.ERROR_SERVER -> "Server error"
                         else -> "Unknown error ($error)"
                     }
-                    Log.w(TAG, "Recognition error: $errorMsg")
+                    Log.w(TAG, "Recognition error: $errorMsg (code=$error)")
 
-                    // Auto-restart on recoverable errors (timeout, no match)
-                    if (shouldContinueListening &&
-                        (error == SpeechRecognizer.ERROR_NO_MATCH ||
-                                error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT)
-                    ) {
-                        createAndStartRecognizer()
+                    if (!shouldContinueListening) return
+
+                    // Do NOT retry permission errors
+                    if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
+                        Log.e(TAG, "Insufficient permissions — cannot retry")
+                        return
+                    }
+
+                    // For silence/no-match, restart immediately (no retry count)
+                    if (error == SpeechRecognizer.ERROR_NO_MATCH ||
+                        error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
+                        scheduleRestart(RECREATE_DELAY_MS)
+                        return
+                    }
+
+                    // For all other errors, retry with delay up to MAX_RETRIES
+                    retryCount++
+                    if (retryCount <= MAX_RETRIES) {
+                        Log.d(TAG, "Retrying after $errorMsg (attempt $retryCount/$MAX_RETRIES)")
+                        scheduleRestart(RETRY_DELAY_MS)
+                    } else {
+                        Log.e(TAG, "Max retries ($MAX_RETRIES) reached for $errorMsg. Giving up.")
                     }
                 }
 
@@ -151,29 +203,49 @@ class SpeechToTextHelper @Inject constructor(
                         } else {
                             "$current $newText"
                         }
-                        Log.d(TAG, "Recognized: $newText | Total: ${_transcribedText.value}")
+                        Log.d(TAG, "Recognized: '$newText' | Total: '${_transcribedText.value}'")
                     }
 
-                    // Restart to continue capturing while recording
                     if (shouldContinueListening) {
-                        createAndStartRecognizer()
+                        scheduleRestart(RECREATE_DELAY_MS)
                     }
                 }
 
                 override fun onPartialResults(partialResults: Bundle?) {
-                    // Partial results are available but we wait for final results
-                    // to avoid duplicate text
+                    val partial = partialResults?.getStringArrayList(
+                        SpeechRecognizer.RESULTS_RECOGNITION
+                    )
+                    if (!partial.isNullOrEmpty()) {
+                        Log.d(TAG, "Partial: '${partial[0]}'")
+                    }
                 }
 
-                override fun onEvent(eventType: Int, params: Bundle?) {
-                    // No-op
-                }
+                override fun onEvent(eventType: Int, params: Bundle?) {}
             })
 
             speechRecognizer?.startListening(intent)
+            Log.d(TAG, "startListening() called on recognizer")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to create/start recognizer: ${e.message}", e)
             isCurrentlyListening = false
+
+            // Retry on creation failure too
+            if (shouldContinueListening) {
+                retryCount++
+                if (retryCount <= MAX_RETRIES) {
+                    Log.d(TAG, "Retrying creation (attempt $retryCount/$MAX_RETRIES)")
+                    mainHandler.postDelayed({
+                        createAndStartRecognizer()
+                    }, RETRY_DELAY_MS)
+                }
+            }
         }
+    }
+
+    private fun scheduleRestart(delayMs: Long) {
+        if (!shouldContinueListening) return
+        mainHandler.postDelayed({
+            createAndStartRecognizer()
+        }, delayMs)
     }
 }

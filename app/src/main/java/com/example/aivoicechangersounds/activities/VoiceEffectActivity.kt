@@ -50,18 +50,21 @@ class VoiceEffectActivity : AppCompatActivity() {
         binding = ActivityVoiceEffectBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val audioFilePath = intent.getStringExtra(RecordingActivity.EXTRA_AUDIO_FILE_PATH)
-        if (audioFilePath.isNullOrBlank()) {
-            Toast.makeText(this, "No audio file received", Toast.LENGTH_SHORT).show()
+        val audioFilePath = intent.getStringExtra(RecordingActivity.EXTRA_AUDIO_FILE_PATH) ?: ""
+        val transcribedText = intent.getStringExtra(RecordingActivity.EXTRA_TRANSCRIBED_TEXT) ?: ""
+        Log.d("Debugging  Option","The text is '$transcribedText'")
+
+        if (audioFilePath.isBlank() && transcribedText.isBlank()) {
+            Toast.makeText(this, "No audio or text received", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
-        viewModel.setAudioFilePath(audioFilePath)
-
-        val transcribedText = intent.getStringExtra(RecordingActivity.EXTRA_TRANSCRIBED_TEXT) ?: ""
+        // Only prepare audio preview if a real file exists (not the STT-only placeholder)
+        if (audioFilePath.isNotBlank() && audioFilePath != "stt_only") {
+            viewModel.setAudioFilePath(audioFilePath)
+        }
         viewModel.setTranscribedText(transcribedText)
-        Log.d("Debugging  Option","The text is $transcribedText")
 
         setupToolbar()
         setupAudioControls()

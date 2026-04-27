@@ -138,29 +138,29 @@ class VoiceEffectViewModel @Inject constructor(
             _voicesLoading.value = true
             _voicesError.value = null
 
-                       val result = voiceEffectRepository.getVoices(language)
+            val result = voiceEffectRepository.getVoices(language)
 
-                       when (result) {
-                           is Resource.Success -> {
-                               _voices.value = result.data
-                               Log.d(
-                                   "VoiceEffectViewModelinhg",
-                                   "fetchVoices Error: ${result.data}"
-                               )
-                           }
+            when (result) {
+                is Resource.Success -> {
+                    _voices.value = result.data
+                    Log.d(
+                        "VoiceEffectViewModelinhg",
+                        "fetchVoices Error: ${result.data}"
+                    )
+                }
 
-                           is Resource.Error -> {
-                               _voicesError.value = result.message
-                               Log.d(
-                                   "VoiceEffectViewModelinhg",
-                                   "fetchVoices Error: ${result.message}"
-                               )
-                           }
+                is Resource.Error -> {
+                    _voicesError.value = result.message
+                    Log.d(
+                        "VoiceEffectViewModelinhg",
+                        "fetchVoices Error: ${result.message}"
+                    )
+                }
 
-                           else -> {}
-                       }
+                else -> {}
+            }
 
-                       _voicesLoading.value = false
+            _voicesLoading.value = false
 
 
         }
@@ -174,9 +174,10 @@ class VoiceEffectViewModel @Inject constructor(
     fun generateVoiceEffect() {
         val voice = _selectedVoice.value ?: return
         val text = transcribedText
-        Log.d("Debugging  Option","The text appearing is $text")
+        Log.d("Debugging  Option","The text appearing is '$text', voiceId='${voice.id}'")
 
         if (text.isNullOrBlank()) {
+            Log.e("Debugging  Option", "transcribedText is null or blank — STT did not capture any speech")
             _generateError.value = "Could not transcribe audio. Please try recording again."
             return
         }
@@ -185,7 +186,7 @@ class VoiceEffectViewModel @Inject constructor(
             _generating.value = true
             _generateError.value = null
 
-            val result = voiceRepository.generateAudio(text, voice.id)
+            val result = voiceRepository.generateAudio(text, voice.id, "effect")
 
             when (result) {
                 is Resource.Success -> {
