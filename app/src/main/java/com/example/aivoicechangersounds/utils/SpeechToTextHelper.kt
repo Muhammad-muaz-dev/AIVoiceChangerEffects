@@ -40,6 +40,13 @@ class SpeechToTextHelper @Inject constructor(
     private var retryCount = 0
     private var currentLanguage: String? = null
 
+    // Tracks the latest partial result for the current utterance.
+    // Partial results replace each other (not additive). When onResults fires,
+    // it gives the final text for that utterance and we clear this.
+    // When stopListening() is called before onResults fires, we use this
+    // as fallback so the user's speech is never lost.
+    private var currentPartialText: String = ""
+
     private val mainHandler = Handler(Looper.getMainLooper())
 
     fun startListening(language: String? = null) {
@@ -51,7 +58,7 @@ class SpeechToTextHelper @Inject constructor(
         }
 
         // Full cleanup of any previous session
-        destroyRecognizer()
+        forceDestroyRecognizer()
 
         _transcribedText.value = ""
         _isReady.value = false
@@ -59,6 +66,7 @@ class SpeechToTextHelper @Inject constructor(
         isCurrentlyListening = false
         retryCount = 0
         currentLanguage = language
+        currentPartialText = ""
 
         // Small delay before creating a fresh recognizer to avoid device-level conflicts
         mainHandler.postDelayed({
@@ -73,17 +81,30 @@ class SpeechToTextHelper @Inject constructor(
         _isReady.value = false
         mainHandler.removeCallbacksAndMessages(null)
 
-        destroyRecognizer()
+        // Flush any unsaved partial result BEFORE destroying the recognizer.
+        // If the user presses Done while still speaking, onResults hasn't fired
+        // yet — only onPartialResults has. This ensures we capture that text.
+        if (currentPartialText.isNotEmpty()) {
+            val current = _transcribedText.value
+            _transcribedText.value = if (current.isEmpty()) {
+                currentPartialText
+            } else {
+                "$current $currentPartialText"
+            }
+            Log.d(TAG, "Flushed partial text: '$currentPartialText' → total: '${_transcribedText.value}'")
+            currentPartialText = ""
+        }
+
+        forceDestroyRecognizer()
 
         val result = _transcribedText.value
         Log.d(TAG, "Final transcribed text: '$result'")
         return result
     }
 
-    private fun destroyRecognizer() {
+    private fun forceDestroyRecognizer() {
         try {
             speechRecognizer?.setRecognitionListener(null)
-            speechRecognizer?.stopListening()
             speechRecognizer?.cancel()
             speechRecognizer?.destroy()
         } catch (e: Exception) {
@@ -100,7 +121,7 @@ class SpeechToTextHelper @Inject constructor(
 
         try {
             // Destroy old instance cleanly before creating new one
-            destroyRecognizer()
+            forceDestroyRecognizer()
 
             speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
 
@@ -163,11 +184,11 @@ class SpeechToTextHelper @Inject constructor(
                         SpeechRecognizer.ERROR_SERVER -> "Server error"
                         else -> "Unknown error ($error)"
                     }
-                    Log.w(TAG, "Recognition error: $errorMsg (code=$error)")
+                    Log.w(TAG, "Recognition error: $errorMsg (code=$error), " +
+                            "accumulated='${_transcribedText.value}', partial='$currentPartialText'")
 
                     if (!shouldContinueListening) return
 
-                    // Do NOT retry permission errors
                     if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
                         Log.e(TAG, "Insufficient permissions — cannot retry")
                         return
@@ -197,13 +218,15 @@ class SpeechToTextHelper @Inject constructor(
                     )
                     if (!matches.isNullOrEmpty()) {
                         val newText = matches[0]
+                        // onResults gives final text for this utterance — clear partial
+                        currentPartialText = ""
                         val current = _transcribedText.value
                         _transcribedText.value = if (current.isEmpty()) {
                             newText
                         } else {
                             "$current $newText"
                         }
-                        Log.d(TAG, "Recognized: '$newText' | Total: '${_transcribedText.value}'")
+                        Log.d(TAG, "FINAL result: '$newText' | Total: '${_transcribedText.value}'")
                     }
 
                     if (shouldContinueListening) {
@@ -215,8 +238,9 @@ class SpeechToTextHelper @Inject constructor(
                     val partial = partialResults?.getStringArrayList(
                         SpeechRecognizer.RESULTS_RECOGNITION
                     )
-                    if (!partial.isNullOrEmpty()) {
-                        Log.d(TAG, "Partial: '${partial[0]}'")
+                    if (!partial.isNullOrEmpty() && partial[0].isNotEmpty()) {
+                        currentPartialText = partial[0]
+                        Log.d(TAG, "Partial: '$currentPartialText' | Accumulated: '${_transcribedText.value}'")
                     }
                 }
 
@@ -229,7 +253,6 @@ class SpeechToTextHelper @Inject constructor(
             Log.e(TAG, "Failed to create/start recognizer: ${e.message}", e)
             isCurrentlyListening = false
 
-            // Retry on creation failure too
             if (shouldContinueListening) {
                 retryCount++
                 if (retryCount <= MAX_RETRIES) {

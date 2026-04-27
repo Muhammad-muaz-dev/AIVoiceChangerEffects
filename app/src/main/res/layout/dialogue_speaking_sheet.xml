@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@android:color/transparent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/constraint_background"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="250dp"
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
-        android:background="@drawable/constraint_background"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -38,10 +37,11 @@
             android:layout_marginTop="20dp"/>
         <TextView
             android:id="@+id/speakingtext"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Hello As-salamu alaikum "
             android:textSize="14sp"
+            android:gravity="center"
             android:fontFamily="@font/outfitbold"
             android:textColor="@color/black"
             app:layout_constraintStart_toStartOf="parent"
@@ -50,10 +50,11 @@
             android:layout_marginTop="20dp"/>
         <TextView
             android:id="@+id/languageLabel"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="English(United States)"
             android:textSize="14sp"
+            android:gravity="center"
             android:fontFamily="@font/outfitregular"
             android:textColor="@color/black"
             app:layout_constraintStart_toStartOf="parent"

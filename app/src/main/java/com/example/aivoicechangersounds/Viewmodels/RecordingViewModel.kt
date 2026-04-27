@@ -91,11 +91,14 @@ class RecordingViewModel @Inject constructor(
     fun onDoneClicked() {
         viewModelScope.launch {
             try {
+                Log.d(TAG, "onDoneClicked — stopping STT...")
                 val transcribedText = speechToTextHelper.stopListening()
-                Log.d(TAG, "STT stopped, transcribedText='$transcribedText'")
+                Log.d(TAG, "STT stopped, transcribedText='$transcribedText', length=${transcribedText.length}")
                 stopTimer()
+                Log.d(TAG, "Transitioning to Done state with text='$transcribedText'")
                 _recordingState.value = RecordingState.Done("stt_only", transcribedText)
             } catch (e: Exception) {
+                Log.e(TAG, "Error in onDoneClicked: ${e.message}", e)
                 speechToTextHelper.stopListening()
                 _recordingState.value = RecordingState.Error(
                     e.message ?: "Failed to stop recording"
