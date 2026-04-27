@@ -75,7 +75,7 @@
                     android:inputType="textMultiLine"
                     android:padding="15dp"
                     android:textColor="@color/black"
-                    android:textCursorDrawable="@null"
+                    android:textCursorDrawable="@drawable/custom_cursor"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
