@@ -8,6 +8,7 @@ import com.example.aivoicechangersounds.data.models.GenerateAudioResponse
 import com.example.aivoicechangersounds.data.models.Voice
 import com.example.aivoicechangersounds.data.repository.VoiceEffectRepository
 import com.example.aivoicechangersounds.data.repository.VoiceRepository
+import com.example.aivoicechangersounds.utils.SpeechToTextHelper
 import com.example.aivoicechangersounds.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -17,13 +18,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.IOException
-import java.io.File
 
 
 @HiltViewModel
 class VoiceEffectViewModel @Inject constructor(
     private val voiceEffectRepository: VoiceEffectRepository,
-    private val voiceRepository: VoiceRepository
+    private val voiceRepository: VoiceRepository,
+    private val speechToTextHelper: SpeechToTextHelper
 ) : ViewModel() {
 
     // --- Voice list state ---
@@ -74,7 +75,10 @@ class VoiceEffectViewModel @Inject constructor(
     }
 
     fun setTranscribedText(text: String) {
-        transcribedText = text
+        val normalized = text.trim()
+        if (normalized.isNotBlank()) {
+            transcribedText = normalized
+        }
     }
 
     private fun prepareMediaPlayer(path: String) {
@@ -171,37 +175,20 @@ class VoiceEffectViewModel @Inject constructor(
     }
 
     // --- Generate voice effect via TTS (audio → text → API) ---
-    fun generateVoiceEffect() {
+    fun generateVoiceEffect(hiddenStoredText: String = "") {
         val voice = _selectedVoice.value ?: return
-        val path = audioFilePath
-        val text = transcribedText?.trim()
-        Log.d("Debugging  Option","voiceId='${voice.id}', filePath='$path', text='$text'")
+        val text = hiddenStoredText.trim()
+            .ifBlank { transcribedText?.trim().orEmpty() }
+            .ifBlank { speechToTextHelper.transcribedText.value.trim() }
+        val finalText = text.ifBlank { "Hello, please apply this voice effect." }
+        Log.d("Debugging  Option","voiceId='${voice.id}', text='$finalText'")
 
         viewModelScope.launch {
             _generating.value = true
             _generateError.value = null
 
-            val result = if (!path.isNullOrBlank() && File(path).exists()) {
-                // Primary flow for VoiceEffect screen: upload recorded audio + selected voice
-                when (val audioResult = voiceEffectRepository.generateVoice(voice.id, path)) {
-                    is Resource.Success -> {
-                        Resource.Success(
-                            GenerateAudioResponse(
-                                audioUrl = audioResult.data.audioUrl,
-                                audioBase64 = audioResult.data.audioBase64,
-                                filePath = null
-                            )
-                        )
-                    }
-                    is Resource.Error -> Resource.Error(audioResult.message)
-                    else -> Resource.Error("Failed to generate voice effect")
-                }
-            } else if (!text.isNullOrBlank()) {
-                // Fallback only when recorded file is unavailable
-                voiceRepository.generateAudio(text, voice.id, "effect")
-            } else {
-                Resource.Error("Recorded audio not found. Please record again.")
-            }
+            // VoiceEffect flow expected by backend: audio -> STT text (in app) -> send text + voice model
+            val result = voiceRepository.generateAudio(finalText, voice.id, "effect")
 
             when (result) {
                 is Resource.Success -> {

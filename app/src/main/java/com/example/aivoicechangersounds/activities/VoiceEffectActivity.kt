@@ -64,6 +64,7 @@ class VoiceEffectActivity : AppCompatActivity() {
         if (audioFilePath.isNotBlank() && File(audioFilePath).exists()) {
             viewModel.setAudioFilePath(audioFilePath)
         }
+        binding.tvHiddenTranscribedText.text = transcribedText.trim()
         viewModel.setTranscribedText(transcribedText)
 
         setupToolbar()
@@ -88,8 +89,9 @@ class VoiceEffectActivity : AppCompatActivity() {
             Toast.makeText(this, "Please select a voice first", Toast.LENGTH_SHORT).show()
             return
         }
+        val hiddenTranscript = binding.tvHiddenTranscribedText.text?.toString()?.trim().orEmpty()
         showSavingBottomSheet()
-        viewModel.generateVoiceEffect()
+        viewModel.generateVoiceEffect(hiddenTranscript)
     }
 
     private fun setupAudioControls() {

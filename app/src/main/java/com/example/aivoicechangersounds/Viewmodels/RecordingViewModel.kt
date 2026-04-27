@@ -19,6 +19,9 @@ class RecordingViewModel @Inject constructor(
     private val speechToTextHelper: SpeechToTextHelper,
     private val audioRecorderRepository: AudioRecorderRepository
 ) : ViewModel() {
+    companion object {
+        private const val STT_FINALIZATION_DELAY_MS = 350L
+    }
 
     private val _liveAmplitude = MutableStateFlow(0)
     val liveAmplitude: StateFlow<Int> = _liveAmplitude.asStateFlow()
@@ -43,6 +46,17 @@ class RecordingViewModel @Inject constructor(
     private var timerJob: Job? = null
     private var amplitudeJob: Job? = null
     private var currentFilePath: String? = null
+    private var latestTranscribedText: String = ""
+
+    init {
+        viewModelScope.launch {
+            speechToTextHelper.transcribedText.collect { text ->
+                if (text.isNotBlank()) {
+                    latestTranscribedText = text
+                }
+            }
+        }
+    }
 
     fun onAudioButtonClicked() {
         when (_recordingState.value) {
@@ -57,6 +71,7 @@ class RecordingViewModel @Inject constructor(
     private fun startRecording() {
         viewModelScope.launch {
             try {
+                latestTranscribedText = ""
                 currentFilePath = audioRecorderRepository.startRecording()
                 speechToTextHelper.startListening(resetTranscript = true)
                 _recordingState.value = RecordingState.Recording
@@ -117,7 +132,10 @@ class RecordingViewModel @Inject constructor(
     fun onDoneClicked() {
         viewModelScope.launch {
             try {
-                val text = speechToTextHelper.stopListening()
+                // Give SpeechRecognizer a moment to deliver final partial/results callbacks.
+                delay(STT_FINALIZATION_DELAY_MS)
+                val textFromStop = speechToTextHelper.stopListening().trim()
+                val finalText = if (textFromStop.isNotBlank()) textFromStop else latestTranscribedText.trim()
                 val filePath = audioRecorderRepository.stopRecording()
                 stopTimer()
                 stopAmplitudeUpdates()
@@ -125,7 +143,7 @@ class RecordingViewModel @Inject constructor(
                 if (filePath.isNullOrBlank()) {
                     _recordingState.value = RecordingState.Error("Recording file not found")
                 } else {
-                    _recordingState.value = RecordingState.Done(filePath, text)
+                    _recordingState.value = RecordingState.Done(filePath, finalText)
                 }
             } catch (e: Exception) {
                 _recordingState.value = RecordingState.Error(
