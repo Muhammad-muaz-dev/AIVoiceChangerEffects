@@ -1,12 +1,12 @@
 plugins {
-    id("com.android.application") version "9.2.0" apply false
-    id("com.android.library") version "9.2.0" apply false
+    id("com.android.application") version "8.7.3" apply false
+    id("com.android.library") version "8.7.3" apply false
 
-    // ✅ Updated Kotlin
-    id("org.jetbrains.kotlin.android") version "2.2.10" apply false
+    // Updated to latest stable for compatibility with Kotlin 2.x
+    id("org.jetbrains.kotlin.android") version "2.0.21" apply false
 
-    // ✅ Matching KSP
-    id("com.google.devtools.ksp") version "2.3.2" apply false
+    // Matching KSP for Kotlin 2.0.21
+    id("com.google.devtools.ksp") version "2.0.21-1.0.27" apply false
 
-    id("com.google.dagger.hilt.android") version "2.57.1" apply false
+    id("com.google.dagger.hilt.android") version "2.52" apply false
 }

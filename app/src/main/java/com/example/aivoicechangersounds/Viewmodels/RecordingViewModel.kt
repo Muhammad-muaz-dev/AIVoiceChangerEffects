@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+
 @HiltViewModel
 class RecordingViewModel @Inject constructor(
     private val speechToTextHelper: SpeechToTextHelper,
@@ -49,9 +50,17 @@ class RecordingViewModel @Inject constructor(
     private var amplitudeJob: Job? = null
     private var currentFilePath: String? = null
 
+    private val _liveTranscribedText = MutableStateFlow("")
+    val liveTranscribedText: StateFlow<String> = _liveTranscribedText.asStateFlow()
+
     // Keeps the latest STT text so if stopListening() fires before onResults,
     // we still have the last known good value
     private var latestTranscribedText: String = ""
+
+    fun setTranscribedText(text: String) {
+        _liveTranscribedText.value = text
+        latestTranscribedText = text
+    }
 
     init {
         viewModelScope.launch {
@@ -80,10 +89,6 @@ class RecordingViewModel @Inject constructor(
             try {
                 latestTranscribedText = ""
                 _elapsedTime.value = 0
-
-                // Start STT FIRST so SpeechRecognizer acquires the mic before MediaRecorder.
-                // This avoids the mic-conflict that causes STT to silently fail on many devices.
-                speechToTextHelper.startListening(resetTranscript = true)
 
                 // Give STT time to initialise its audio capture
                 delay(MIC_INIT_DELAY_MS)
@@ -217,7 +222,7 @@ class RecordingViewModel @Inject constructor(
     private fun formatTime(seconds: Long): String {
         val m = seconds / 60
         val s = seconds % 60
-        return String.format("%02d:%02d", m, s)
+        return String.format(java.util.Locale.getDefault(), "%02d:%02d", m, s)
     }
 
     override fun onCleared() {

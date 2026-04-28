@@ -8,6 +8,7 @@
 
     <!-- Waveform placeholder -->
     <Toolbar
+        android:id="@+id/tool1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingTop="10dp">
@@ -30,12 +31,14 @@
             android:textSize="20sp" />
     </Toolbar>
 
-    <View
+    <com.example.aivoicechangersounds.utils.RecorderVisualizerView
         android:id="@+id/waveformView"
         android:layout_width="match_parent"
         android:layout_height="120dp"
         android:layout_marginTop="80dp"
-        android:background="@color/background" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tool1"/>
 
     <TextView
         android:id="@+id/tvTimer"

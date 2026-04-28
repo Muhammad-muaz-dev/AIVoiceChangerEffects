@@ -84,6 +84,17 @@ class ReverseVoice : AppCompatActivity() {
                         binding.tvTimer.text = time
                     }
                 }
+                launch {
+                    viewModel.liveAmplitude.collect { amplitude ->
+                        val isRecording = viewModel.recordingState.value is RecordingState.Recording
+                        val scaledAmplitude = if (!isRecording || amplitude <= 0) {
+                            0
+                        } else {
+                            amplitude.coerceIn(0, 32767)
+                        }
+                        binding.waveformView.addAmplitude(scaledAmplitude)
+                    }
+                }
             }
         }
     }
@@ -94,6 +105,7 @@ class ReverseVoice : AppCompatActivity() {
                 binding.btnaudio.setImageResource(R.drawable.ic_audio)
                 binding.btncancel.visibility = View.GONE
                 binding.btndone.visibility = View.GONE
+                binding.waveformView.reset()
             }
 
             is RecordingState.Recording -> {
@@ -116,6 +128,7 @@ class ReverseVoice : AppCompatActivity() {
                 binding.btnaudio.setImageResource(R.drawable.ic_audio)
                 binding.btncancel.visibility = View.GONE
                 binding.btndone.visibility = View.GONE
+                binding.waveformView.reset()
             }
 
             is RecordingState.Error -> {
@@ -123,6 +136,7 @@ class ReverseVoice : AppCompatActivity() {
                 binding.btnaudio.setImageResource(R.drawable.ic_audio)
                 binding.btncancel.visibility = View.GONE
                 binding.btndone.visibility = View.GONE
+                binding.waveformView.reset()
             }
         }
     }

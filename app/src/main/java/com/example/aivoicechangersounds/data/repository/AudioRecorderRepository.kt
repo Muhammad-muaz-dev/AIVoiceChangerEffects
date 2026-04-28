@@ -36,7 +36,7 @@ class AudioRecorderRepository @Inject constructor(
         currentFilePath = outputFile.absolutePath
 
         mediaRecorder = createMediaRecorder().apply {
-            // MIC is more compatible when SpeechRecognizer is also active.
+            // Attempt using MIC instead of VOICE_RECOGNITION to see if OS allows concurrent SpeechRecognizer
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)

@@ -30,17 +30,21 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 
     buildFeatures {
         viewBinding = true
     }
+}
+
+ksp {
+    arg("hilt.correctErrorTypes", "true")
 }
 
 dependencies {
@@ -60,8 +64,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     //hilt injection
-    implementation("com.google.dagger:hilt-android:2.57.1")
-    ksp("com.google.dagger:hilt-android-compiler:2.57.1")
+    implementation("com.google.dagger:hilt-android:2.52")
+    ksp("com.google.dagger:hilt-android-compiler:2.52")
 
     // Retrofit + OkHttp (Networking)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -70,7 +74,7 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     //glide
     implementation("com.github.bumptech.glide:glide:4.16.0")
-    ksp ("com.github.bumptech.glide:compiler:4.16.0")
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.16.0")
 
     // Gson
     implementation("com.google.code.gson:gson:2.10.1")

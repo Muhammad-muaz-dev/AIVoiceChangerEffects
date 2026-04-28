@@ -4,30 +4,26 @@
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_margin="4dp"
-    android:background="@drawable/bg_voice_item"
+    android:background="@color/background"
     android:foreground="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
     android:padding="8dp">
 
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintWidth_percent="1">
+
 
         <!-- Avatar (visible) -->
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/imageViewAvatar"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="match_parent"
+            android:layout_height="65dp"
             android:src="@drawable/ic_voice_placeholder"
             android:contentDescription="Voice avatar"
-            android:scaleType="centerCrop" />
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/RoundedCornerStyle"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
 
         <!-- Voice Name (visible) -->
         <TextView
@@ -39,29 +35,36 @@
             android:textColor="@color/black"
             android:gravity="center"
             android:maxLines="2"
-            android:ellipsize="end" />
+            android:ellipsize="end"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/imageViewAvatar"/>
 
         <!-- Voice ID — invisible, only here for MVVM data binding if needed -->
         <TextView
             android:id="@+id/textViewVoiceId"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="gone" />
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
 
         <!-- Preview URL — invisible -->
         <TextView
             android:id="@+id/textViewPreviewUrl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="gone" />
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
 
         <!-- Language — invisible -->
         <TextView
             android:id="@+id/textViewLanguage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="gone" />
-
-    </LinearLayout>
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

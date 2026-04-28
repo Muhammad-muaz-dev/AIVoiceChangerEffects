@@ -10,7 +10,7 @@ class Myapp: Application() {
         super.onCreate()
 
         TokenProvider.setToken(
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMyIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NzczNjA3MTIsImV4cCI6MTc3NzM2MjUxMn0.nmnm5i0S0zpnAs90AVfzaQiyyGtlpTbM8u-CfSPT84E"
+            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMyIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NzczODAwNzEsImV4cCI6MTc3NzM4MTg3MX0.1zMbhwWTigRV8rKnxLZD7SIzb34wxi2Sxv78F_-rHR4"
         )
     }
 }

@@ -22,6 +22,7 @@ class ViewModelReverseVoice @Inject constructor(
     val recordingState: StateFlow<RecordingState> = _recordingState.asStateFlow()
     private var amplitudeJob: Job? = null
     private val _liveAmplitude = MutableStateFlow(0)
+    val liveAmplitude: StateFlow<Int> = _liveAmplitude.asStateFlow()
 
     private val _elapsedTime = MutableStateFlow(0L)
     val elapsedTime: StateFlow<Long> = _elapsedTime.asStateFlow()
@@ -53,6 +54,7 @@ class ViewModelReverseVoice @Inject constructor(
                     e.message ?: "Failed to start recording"
                 )
             }
+            startAmplitudeUpdates()
         }
     }
 
@@ -62,6 +64,7 @@ class ViewModelReverseVoice @Inject constructor(
                 reverseVoiceRepository.pauseRecording()
                 _recordingState.value = RecordingState.Paused
                 pauseTimer()
+                stopAmplitudeUpdates()
             } catch (e: Exception) {
                 _recordingState.value = RecordingState.Error(
                     e.message ?: "Failed to pause recording"
@@ -69,6 +72,7 @@ class ViewModelReverseVoice @Inject constructor(
             }
         }
     }
+
     private fun startAmplitudeUpdates() {
         amplitudeJob?.cancel()
         amplitudeJob = viewModelScope.launch {
@@ -79,12 +83,18 @@ class ViewModelReverseVoice @Inject constructor(
         }
     }
 
+    private fun stopAmplitudeUpdates() {
+        amplitudeJob?.cancel()
+        _liveAmplitude.value = 0
+    }
+
     private fun resumeRecording() {
         viewModelScope.launch {
             try {
                 reverseVoiceRepository.resumeRecording()
                 _recordingState.value = RecordingState.Recording
                 startTimer()
+                startAmplitudeUpdates()
             } catch (e: Exception) {
                 _recordingState.value = RecordingState.Error(
                     e.message ?: "Failed to resume recording"
@@ -98,6 +108,7 @@ class ViewModelReverseVoice @Inject constructor(
             try {
                 reverseVoiceRepository.cancelRecording()
                 stopTimer()
+                stopAmplitudeUpdates()
                 _elapsedTime.value = 0L
                 _formattedTime.value = "00:00"
                 currentFilePath = null
@@ -117,6 +128,7 @@ class ViewModelReverseVoice @Inject constructor(
             try {
                 val filePath = reverseVoiceRepository.stopRecording()
                 stopTimer()
+                stopAmplitudeUpdates()
                 if (filePath != null) {
                     _recordingState.value = RecordingState.Done(
                         filePath = filePath,
@@ -161,6 +173,7 @@ class ViewModelReverseVoice @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
+        stopAmplitudeUpdates()
         viewModelScope.launch {
             try {
                 reverseVoiceRepository.cancelRecording()
