@@ -23,9 +23,9 @@ class SpeechToTextHelper @Inject constructor(
 
     companion object {
         private const val TAG = "SpeechToTextHelper"
-        private const val MAX_RETRIES = 8
-        private const val RETRY_DELAY_MS = 1000L
-        private const val RECREATE_DELAY_MS = 500L
+        private const val MAX_RETRIES = 15
+        private const val RETRY_DELAY_MS = 800L
+        private const val RECREATE_DELAY_MS = 300L
         private const val SILENCE_THRESHOLD_DB = 2.0f
     }
 
@@ -138,13 +138,25 @@ class SpeechToTextHelper @Inject constructor(
                 }
 
                 override fun onError(error: Int) {
+                    Log.w(TAG, "SpeechRecognizer error code=$error, retry=$retryCount/$MAX_RETRIES")
                     if (!shouldContinueListening) return
+
+                    // Commit any partial results so they are not lost on error
+                    if (currentPartialText.isNotEmpty()) {
+                        val current = _transcribedText.value
+                        _transcribedText.value =
+                            if (current.isEmpty()) currentPartialText
+                            else "$current $currentPartialText"
+                        currentPartialText = ""
+                    }
 
                     retryCount++
                     if (retryCount <= MAX_RETRIES) {
                         mainHandler.postDelayed({
                             createAndStartRecognizer()
                         }, RETRY_DELAY_MS)
+                    } else {
+                        Log.e(TAG, "Max retries reached — STT stopped")
                     }
                 }
 
@@ -185,6 +197,8 @@ class SpeechToTextHelper @Inject constructor(
 
             speechRecognizer?.startListening(intent)
 
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create/start recognizer: ${e.message}", e)
+        }
     }
 }

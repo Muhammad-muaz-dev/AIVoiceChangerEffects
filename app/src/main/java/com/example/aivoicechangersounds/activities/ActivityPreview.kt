@@ -270,12 +270,12 @@ class ActivityPreview : AppCompatActivity() {
                     viewModel.isPlayingOriginal.collect { playing ->
                         if (playing) {
                             binding.btnPlayOriginal.setCompoundDrawablesWithIntrinsicBounds(
-                                R.drawable.icplaying, 0, 0, 0
+                                R.drawable.icpausing, 0, 0, 0
                             )
                             binding.btnPlayOriginal.text = "Playing..."
                         } else {
                             binding.btnPlayOriginal.setCompoundDrawablesWithIntrinsicBounds(
-                                R.drawable.icpausing, 0, 0, 0
+                                R.drawable.icplaying, 0, 0, 0
                             )
                             binding.btnPlayOriginal.text = "Play Original"
                         }

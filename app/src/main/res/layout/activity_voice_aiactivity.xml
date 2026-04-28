@@ -176,6 +176,8 @@
                 android:id="@+id/progressVoices"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:layout_marginTop="100dp"
+                android:indeterminateTint="@color/accent"
                 android:visibility="gone"
                 app:layout_constraintTop_toTopOf="@id/rvVoices"
                 app:layout_constraintBottom_toBottomOf="@id/rvVoices"

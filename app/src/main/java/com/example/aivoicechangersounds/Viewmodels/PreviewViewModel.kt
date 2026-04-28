@@ -393,13 +393,6 @@ class PreviewViewModel @Inject constructor(
         stopProgressUpdates()
         releaseOriginalPlayer()
         releaseReversePlayer()
-        // Clean up the reversed temp file
-        reversedFilePath?.let { path ->
-            try {
-                File(path).delete()
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to delete reversed file: ${e.message}")
-            }
-        }
+        // Reversed files are kept for history in ActivityFile
     }
 }

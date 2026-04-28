@@ -47,6 +47,10 @@ class VoiceGridAdapter(
             binding.textViewVoiceName.text = voice.name
 
             // Load avatar image
+            Glide.with(binding.imageViewAvatar.context)
+                .load(voice.avatar)
+                .transition(DrawableTransitionOptions.withCrossFade())
+                .into(binding.imageViewAvatar)
 
             // Visual selection state
             binding.root.isSelected = isSelected

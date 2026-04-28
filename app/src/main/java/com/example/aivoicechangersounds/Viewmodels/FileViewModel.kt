@@ -90,7 +90,8 @@ class FileViewModel @Inject constructor(
         cacheDir.listFiles()?.forEach { file ->
             if (file.isFile && isAudioFile(file) &&
                 (file.name.startsWith("tts_") || file.name.startsWith("generated_audio_") ||
-                        file.name.startsWith("effect_") || file.name.startsWith("translate_"))
+                        file.name.startsWith("effect_") || file.name.startsWith("translate_") ||
+                        file.name.startsWith("reversed_"))
             ) {
                 val category = categorizeFile(file.name)
                 val duration = getAudioDuration(file.absolutePath)

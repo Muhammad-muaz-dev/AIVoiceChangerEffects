@@ -7,5 +7,6 @@ data class Voice(
     @SerializedName("name") val name: String,
     @SerializedName("language") val language: String?,
     @SerializedName("gender") val gender: String?,
-    @SerializedName("friendly_name") val friendlyName: String?
+    @SerializedName("friendly_name") val friendlyName: String?,
+    @SerializedName("avatar") val avatar: String
 )

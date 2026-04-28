@@ -1,5 +1,6 @@
 package com.example.aivoicechangersounds.Viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aivoicechangersounds.data.models.RecordingState
@@ -20,8 +21,11 @@ class RecordingViewModel @Inject constructor(
 ) : ViewModel() {
 
     companion object {
-        // Small delay so SpeechRecognizer can fire its final onResults before we stop it
-        private const val STT_FINALIZATION_DELAY_MS = 350L
+        private const val TAG = "RecordingViewModel"
+        // Delay after stopping MediaRecorder so SpeechRecognizer can deliver final results
+        private const val STT_FINALIZATION_DELAY_MS = 600L
+        // Delay before starting MediaRecorder so SpeechRecognizer gets the mic first
+        private const val MIC_INIT_DELAY_MS = 400L
     }
 
     private val _liveAmplitude = MutableStateFlow(0)
@@ -77,11 +81,15 @@ class RecordingViewModel @Inject constructor(
                 latestTranscribedText = ""
                 _elapsedTime.value = 0
 
-                // Start audio recording → returns file path
-                currentFilePath = audioRecorderRepository.startRecording()
-
-                // Start STT at the same time — resets transcript for a fresh session
+                // Start STT FIRST so SpeechRecognizer acquires the mic before MediaRecorder.
+                // This avoids the mic-conflict that causes STT to silently fail on many devices.
                 speechToTextHelper.startListening(resetTranscript = true)
+
+                // Give STT time to initialise its audio capture
+                delay(MIC_INIT_DELAY_MS)
+
+                // Now start audio recording
+                currentFilePath = audioRecorderRepository.startRecording()
 
                 _recordingState.value = RecordingState.Recording
                 startTimer()
@@ -138,17 +146,22 @@ class RecordingViewModel @Inject constructor(
     fun onDoneClicked() {
         viewModelScope.launch {
             try {
-                // Wait briefly so SpeechRecognizer can fire its final onResults callback
+                // 1. Stop audio recording FIRST so the mic is released back to SpeechRecognizer.
+                //    This lets STT deliver any pending final results that were blocked by
+                //    the MediaRecorder holding the mic.
+                val filePath = audioRecorderRepository.stopRecording()
+
+                // 2. Give the SpeechRecognizer time to fire its final onResults callback
+                //    now that the mic is free.
                 delay(STT_FINALIZATION_DELAY_MS)
 
-                // stopListening() commits any partial text and returns the full transcript
+                // 3. stopListening() commits any partial text and returns the full transcript
                 val textFromStop = speechToTextHelper.stopListening().trim()
 
-                // Fallback: if stopListening() returned empty, use what we collected in init{}
+                // 4. Fallback: if stopListening() returned empty, use what we collected in init{}
                 val finalText = textFromStop.ifBlank { latestTranscribedText.trim() }
 
-                // Stop audio recording → returns the saved file path
-                val filePath = audioRecorderRepository.stopRecording()
+                Log.d(TAG, "Done → filePath=$filePath, finalText='$finalText'")
 
                 stopTimer()
                 stopAmplitudeUpdates()
@@ -157,10 +170,9 @@ class RecordingViewModel @Inject constructor(
                 if (filePath.isNullOrBlank()) {
                     _recordingState.value = RecordingState.Error("Recording file not found")
                 } else {
-                    // Emit Done with BOTH pieces of data
                     _recordingState.value = RecordingState.Done(
                         filePath = filePath,
-                        transcribedText = finalText   // can be empty — VoiceEffectActivity handles that
+                        transcribedText = finalText
                     )
                 }
             } catch (e: Exception) {

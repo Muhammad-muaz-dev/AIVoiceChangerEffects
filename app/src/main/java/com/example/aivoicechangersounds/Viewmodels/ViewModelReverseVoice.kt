@@ -20,6 +20,8 @@ class ViewModelReverseVoice @Inject constructor(
 
     private val _recordingState = MutableStateFlow<RecordingState>(RecordingState.Idle)
     val recordingState: StateFlow<RecordingState> = _recordingState.asStateFlow()
+    private var amplitudeJob: Job? = null
+    private val _liveAmplitude = MutableStateFlow(0)
 
     private val _elapsedTime = MutableStateFlow(0L)
     val elapsedTime: StateFlow<Long> = _elapsedTime.asStateFlow()
@@ -64,6 +66,15 @@ class ViewModelReverseVoice @Inject constructor(
                 _recordingState.value = RecordingState.Error(
                     e.message ?: "Failed to pause recording"
                 )
+            }
+        }
+    }
+    private fun startAmplitudeUpdates() {
+        amplitudeJob?.cancel()
+        amplitudeJob = viewModelScope.launch {
+            while (_recordingState.value is RecordingState.Recording) {
+                _liveAmplitude.value = reverseVoiceRepository.getMaxAmplitude()
+                delay(80)
             }
         }
     }

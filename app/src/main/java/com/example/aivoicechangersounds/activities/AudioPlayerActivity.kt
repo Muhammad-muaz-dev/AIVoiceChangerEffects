@@ -1,9 +1,13 @@
 package com.example.aivoicechangersounds.activities
 
+import android.content.ContentValues
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.view.ViewGroup
 import android.widget.SeekBar
 import android.widget.Toast
@@ -16,6 +20,8 @@ import com.voicechanger.app.R
 import com.voicechanger.app.databinding.ActivityAudioPlayerBinding
 import com.voicechanger.app.databinding.DialogueSaveFileBinding
 import dagger.hilt.android.AndroidEntryPoint
+import java.io.File
+import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
@@ -49,6 +55,7 @@ class AudioPlayerActivity : AppCompatActivity() {
         loadAudioData()
         setupControls()
         observeViewModel()
+        binding.btnback.setOnClickListener { finish() }
     }
 
     private fun setupToolbar() {
@@ -192,7 +199,7 @@ class AudioPlayerActivity : AppCompatActivity() {
         val filename = "AUD-$timestamp"
 
         sheetBinding.btnDone.setOnClickListener {
-            saveAudioFile(filename)
+            saveAudioToDownloads(filename)
             dialog.dismiss()
         }
 
@@ -203,8 +210,43 @@ class AudioPlayerActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun saveAudioFile(filename: String) {
-        Toast.makeText(this, "Audio saved as $filename", Toast.LENGTH_SHORT).show()
+    private fun saveAudioToDownloads(filePath: String) {
+
+        val sourceFile = File(filePath)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "voice_${System.currentTimeMillis()}.mp3")
+                put(MediaStore.MediaColumns.MIME_TYPE, "audio/mpeg")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/VoiceAI")
+            }
+
+            val uri = contentResolver.insert(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                contentValues
+            )
+
+            uri?.let {
+                contentResolver.openOutputStream(it).use { output ->
+                    FileInputStream(sourceFile).use { input ->
+                        input.copyTo(output!!)
+                    }
+                }
+                Toast.makeText(this, "Saved to Downloads", Toast.LENGTH_SHORT).show()
+            }
+
+        } else {
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val folder = File(downloadsDir, "VoiceAI")
+
+            if (!folder.exists()) folder.mkdirs()
+
+            val file = File(folder, "voice_${System.currentTimeMillis()}.mp3")
+
+            sourceFile.copyTo(file, overwrite = true)
+
+            Toast.makeText(this, "Saved to Downloads", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun shareAudioFile(filename: String) {

@@ -162,7 +162,8 @@ class VoiceAIActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            viewModel.generateAudio(text)
+            val prefix = if (currentMode == VoiceAIMode.TRANSLATE) "translate_" else "tts_"
+            viewModel.generateAudio(text, prefix)
         }
     }
 

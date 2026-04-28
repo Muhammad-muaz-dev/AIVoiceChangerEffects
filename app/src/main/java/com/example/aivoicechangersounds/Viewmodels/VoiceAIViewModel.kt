@@ -94,7 +94,7 @@ class VoiceAIViewModel @Inject constructor(
     }
 
     // ───────────────────────── Generate Audio ─────────────────────────
-    fun generateAudio(text: String) {
+    fun generateAudio(text: String, prefix: String = "tts_") {
 
         val voice = _selectedVoice.value
 
@@ -113,7 +113,8 @@ class VoiceAIViewModel @Inject constructor(
 
             val result = voiceRepository.generateAudio(
                 text = text,
-                model = voice.id
+                model = voice.id,
+                prefix = prefix
             )
 
             _generateResult.value = result

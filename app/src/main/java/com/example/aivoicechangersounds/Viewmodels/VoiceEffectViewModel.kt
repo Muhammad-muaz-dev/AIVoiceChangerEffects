@@ -131,7 +131,7 @@ class VoiceEffectViewModel @Inject constructor(
             when (val result = voiceRepository.generateAudio(
                 text = textToSend,
                 model = voice.id,
-                filePrefix = "tts"
+                prefix = "effect_"
             )) {
                 is Resource.Success -> {
                     Log.d("VoiceEffectViewModel", "Generate success: ${result.data.audioUrl}")
