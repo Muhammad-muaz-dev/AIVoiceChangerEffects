@@ -107,7 +107,10 @@ class ViewModelReverseVoice @Inject constructor(
                 val filePath = reverseVoiceRepository.stopRecording()
                 stopTimer()
                 if (filePath != null) {
-                    _recordingState.value = RecordingState.Done(filePath)
+                    _recordingState.value = RecordingState.Done(
+                        filePath = filePath,
+                        transcribedText = ""  // ← add this
+                    )
                 } else {
                     _recordingState.value = RecordingState.Error("Recording file not found")
                 }

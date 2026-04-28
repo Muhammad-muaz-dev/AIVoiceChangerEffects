@@ -68,7 +68,6 @@ class VoiceRepository @Inject constructor(
     suspend fun generateAudio(
         text: String,
         model: String,
-        filePrefix: String = "tts"
     ): Resource<GenerateAudioResponse> {
 
         return withContext(Dispatchers.IO) {
@@ -83,7 +82,7 @@ class VoiceRepository @Inject constructor(
                     val body = response.body()!!
 
                     // Save the binary stream to a file
-                    val fileName = "${filePrefix}_${System.currentTimeMillis()}.mp3"
+                    val fileName = "${System.currentTimeMillis()}.mp3"
                     val file = File(context.cacheDir, fileName)
 
                     body.byteStream().use { input ->

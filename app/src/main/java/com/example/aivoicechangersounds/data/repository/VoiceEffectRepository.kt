@@ -18,8 +18,7 @@ import javax.inject.Singleton
 
 @Singleton
 class VoiceEffectRepository @Inject constructor(
-    private val api: ApiServiceVoices,
-    private val apiGenerateAudio: ApiServicesGenerateAudio
+    private val api: ApiServiceVoices
 ) {
 
     // ─────────────────────────────────────────────
@@ -60,59 +59,5 @@ class VoiceEffectRepository @Inject constructor(
         }
     }
 
-    // ─────────────────────────────────────────────
-    // GENERATE VOICE (Speech-to-Speech)
-    // ─────────────────────────────────────────────
-    suspend fun generateVoice(
-        voiceId: String,
-        audioFilePath: String
-    ): Resource<GenerateVoiceResponse> {
-        return withContext(Dispatchers.IO) {
-            try {
-                val audioFile = File(audioFilePath)
 
-                if (!audioFile.exists()) {
-                    return@withContext Resource.Error("Audio file not found")
-                }
-
-                // RequestBody
-                val voiceIdBody = voiceId.toRequestBody("text/plain".toMediaTypeOrNull())
-
-                val audioRequestBody =
-                    audioFile.asRequestBody("audio/mpeg".toMediaTypeOrNull())
-
-                val audioPart = MultipartBody.Part.createFormData(
-                    name = "audio_file",
-                    filename = audioFile.name,
-                    body = audioRequestBody
-                )
-
-                val response = apiGenerateAudio.generateAudio(voiceIdBody, audioPart)
-
-                Log.d("API_DEBUG", "Generate Response Code: ${response.code()}")
-
-                if (response.isSuccessful) {
-                    val body = response.body()
-
-                    if (body != null) {
-                        Log.d("API_DEBUG", "Audio URL: ${body.audioUrl}")
-                        Resource.Success(body)
-                    } else {
-                        Resource.Error("Empty response body")
-                    }
-
-                } else {
-                    val error = response.errorBody()?.string()
-
-                    Log.e("API_ERROR", "Generate Error: $error")
-
-                    Resource.Error("Error ${response.code()}: ${response.message()}")
-                }
-
-            } catch (e: Exception) {
-                Log.e("API_EXCEPTION", "Generate Exception: ${e.message}", e)
-                Resource.Error(e.localizedMessage ?: "Unknown error")
-            }
-        }
-    }
 }

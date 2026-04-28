@@ -13,21 +13,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-
 @HiltViewModel
 class RecordingViewModel @Inject constructor(
     private val speechToTextHelper: SpeechToTextHelper,
     private val audioRecorderRepository: AudioRecorderRepository
 ) : ViewModel() {
+
     companion object {
+        // Small delay so SpeechRecognizer can fire its final onResults before we stop it
         private const val STT_FINALIZATION_DELAY_MS = 350L
     }
 
     private val _liveAmplitude = MutableStateFlow(0)
     val liveAmplitude: StateFlow<Int> = _liveAmplitude.asStateFlow()
 
-    private val _recordingState =
-        MutableStateFlow<RecordingState>(RecordingState.Idle)
+    private val _recordingState = MutableStateFlow<RecordingState>(RecordingState.Idle)
     val recordingState: StateFlow<RecordingState> = _recordingState.asStateFlow()
 
     private val _elapsedTime = MutableStateFlow(0L)
@@ -36,9 +36,7 @@ class RecordingViewModel @Inject constructor(
         .let { flow ->
             MutableStateFlow("00:00").apply {
                 viewModelScope.launch {
-                    flow.collect { value ->
-                        this@apply.value = formatTime(value)
-                    }
+                    flow.collect { value -> this@apply.value = formatTime(value) }
                 }
             }
         }
@@ -46,41 +44,50 @@ class RecordingViewModel @Inject constructor(
     private var timerJob: Job? = null
     private var amplitudeJob: Job? = null
     private var currentFilePath: String? = null
+
+    // Keeps the latest STT text so if stopListening() fires before onResults,
+    // we still have the last known good value
     private var latestTranscribedText: String = ""
 
     init {
         viewModelScope.launch {
             speechToTextHelper.transcribedText.collect { text ->
-                if (text.isNotBlank()) {
-                    latestTranscribedText = text
-                }
+                if (text.isNotBlank()) latestTranscribedText = text
             }
         }
     }
+
+    // ── Button handler ────────────────────────────────────────────────────────
 
     fun onAudioButtonClicked() {
         when (_recordingState.value) {
             is RecordingState.Idle,
             is RecordingState.Cancelled -> startRecording()
             is RecordingState.Recording -> pauseRecording()
-            is RecordingState.Paused -> resumeRecording()
+            is RecordingState.Paused    -> resumeRecording()
             else -> {}
         }
     }
+
+    // ── Recording lifecycle ───────────────────────────────────────────────────
 
     private fun startRecording() {
         viewModelScope.launch {
             try {
                 latestTranscribedText = ""
+                _elapsedTime.value = 0
+
+                // Start audio recording → returns file path
                 currentFilePath = audioRecorderRepository.startRecording()
+
+                // Start STT at the same time — resets transcript for a fresh session
                 speechToTextHelper.startListening(resetTranscript = true)
+
                 _recordingState.value = RecordingState.Recording
                 startTimer()
                 startAmplitudeUpdates()
             } catch (e: Exception) {
-                _recordingState.value = RecordingState.Error(
-                    e.message ?: "Failed to start recording"
-                )
+                _recordingState.value = RecordingState.Error(e.message ?: "Failed to start recording")
             }
         }
     }
@@ -89,14 +96,13 @@ class RecordingViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 audioRecorderRepository.pauseRecording()
+                // Stop STT on pause — partial text is committed inside stopListening()
                 speechToTextHelper.stopListening()
                 _recordingState.value = RecordingState.Paused
                 timerJob?.cancel()
                 stopAmplitudeUpdates()
             } catch (e: Exception) {
-                _recordingState.value = RecordingState.Error(
-                    e.message ?: "Failed to pause recording"
-                )
+                _recordingState.value = RecordingState.Error(e.message ?: "Failed to pause recording")
             }
         }
     }
@@ -105,14 +111,13 @@ class RecordingViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 audioRecorderRepository.resumeRecording()
+                // resetTranscript = false so STT APPENDS to the existing text (not overwrites)
                 speechToTextHelper.startListening(resetTranscript = false)
                 _recordingState.value = RecordingState.Recording
                 startTimer()
                 startAmplitudeUpdates()
             } catch (e: Exception) {
-                _recordingState.value = RecordingState.Error(
-                    e.message ?: "Failed to resume recording"
-                )
+                _recordingState.value = RecordingState.Error(e.message ?: "Failed to resume recording")
             }
         }
     }
@@ -124,6 +129,7 @@ class RecordingViewModel @Inject constructor(
             stopTimer()
             stopAmplitudeUpdates()
             _elapsedTime.value = 0
+            latestTranscribedText = ""
             currentFilePath = null
             _recordingState.value = RecordingState.Idle
         }
@@ -132,26 +138,38 @@ class RecordingViewModel @Inject constructor(
     fun onDoneClicked() {
         viewModelScope.launch {
             try {
-                // Give SpeechRecognizer a moment to deliver final partial/results callbacks.
+                // Wait briefly so SpeechRecognizer can fire its final onResults callback
                 delay(STT_FINALIZATION_DELAY_MS)
+
+                // stopListening() commits any partial text and returns the full transcript
                 val textFromStop = speechToTextHelper.stopListening().trim()
-                val finalText = if (textFromStop.isNotBlank()) textFromStop else latestTranscribedText.trim()
+
+                // Fallback: if stopListening() returned empty, use what we collected in init{}
+                val finalText = textFromStop.ifBlank { latestTranscribedText.trim() }
+
+                // Stop audio recording → returns the saved file path
                 val filePath = audioRecorderRepository.stopRecording()
+
                 stopTimer()
                 stopAmplitudeUpdates()
                 _elapsedTime.value = 0
+
                 if (filePath.isNullOrBlank()) {
                     _recordingState.value = RecordingState.Error("Recording file not found")
                 } else {
-                    _recordingState.value = RecordingState.Done(filePath, finalText)
+                    // Emit Done with BOTH pieces of data
+                    _recordingState.value = RecordingState.Done(
+                        filePath = filePath,
+                        transcribedText = finalText   // can be empty — VoiceEffectActivity handles that
+                    )
                 }
             } catch (e: Exception) {
-                _recordingState.value = RecordingState.Error(
-                    e.message ?: "Failed to finish recording"
-                )
+                _recordingState.value = RecordingState.Error(e.message ?: "Failed to finish recording")
             }
         }
     }
+
+    // ── Timer ─────────────────────────────────────────────────────────────────
 
     private fun startTimer() {
         timerJob?.cancel()
@@ -166,6 +184,8 @@ class RecordingViewModel @Inject constructor(
     private fun stopTimer() {
         timerJob?.cancel()
     }
+
+    // ── Amplitude ─────────────────────────────────────────────────────────────
 
     private fun startAmplitudeUpdates() {
         amplitudeJob?.cancel()
@@ -192,8 +212,6 @@ class RecordingViewModel @Inject constructor(
         super.onCleared()
         speechToTextHelper.stopListening()
         stopAmplitudeUpdates()
-        viewModelScope.launch {
-            audioRecorderRepository.cancelRecording()
-        }
+        viewModelScope.launch { audioRecorderRepository.cancelRecording() }
     }
 }

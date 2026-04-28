@@ -1,6 +1,5 @@
 package com.example.aivoicechangersounds.activities
 
-
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -51,9 +50,12 @@ class VoiceEffectActivity : AppCompatActivity() {
         binding = ActivityVoiceEffectBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // ── Step 1: Read data from Intent ─────────────────────────────────────
         val audioFilePath = intent.getStringExtra(RecordingActivity.EXTRA_AUDIO_FILE_PATH) ?: ""
         val transcribedText = intent.getStringExtra(RecordingActivity.EXTRA_TRANSCRIBED_TEXT) ?: ""
-        Log.d("Debugging  Option","The text is '$transcribedText'")
+
+        Log.d("VoiceEffectActivity", "audioFilePath='$audioFilePath'")
+        Log.d("VoiceEffectActivity", "transcribedText='$transcribedText'")
 
         if (audioFilePath.isBlank() && transcribedText.isBlank()) {
             Toast.makeText(this, "No audio or text received", Toast.LENGTH_SHORT).show()
@@ -61,6 +63,7 @@ class VoiceEffectActivity : AppCompatActivity() {
             return
         }
 
+        // ── Step 2: Pass audio file to ViewModel for local playback ───────────
         if (audioFilePath.isNotBlank() && File(audioFilePath).exists()) {
             viewModel.setAudioFilePath(audioFilePath)
         }
@@ -72,30 +75,42 @@ class VoiceEffectActivity : AppCompatActivity() {
         setupVoiceGrid()
         observeViewModel()
 
-        // Auto-fetch voices on entry
+        // Fetch voices as soon as screen opens
         viewModel.fetchVoices()
     }
+
+    // ── Toolbar ───────────────────────────────────────────────────────────────
 
     private fun setupToolbar() {
         binding.backarrow.setOnClickListener { finish() }
 
-        // ic_tick2 button — send recorded audio + selected voice to backend
+        // Tick button → send to backend
         binding.toolbarAIVoices.findViewById<View>(R.id.btnTick)?.setOnClickListener {
             onTickClicked()
         }
     }
+
+
     private fun onTickClicked() {
         if (viewModel.selectedVoice.value == null) {
             Toast.makeText(this, "Please select a voice first", Toast.LENGTH_SHORT).show()
             return
         }
-        val hiddenTranscript = binding.tvHiddenTranscribedText.text?.toString()?.trim().orEmpty()
+
+        val textToSend = binding.tvHiddenTranscribedText.text?.toString()?.trim().orEmpty()
+        Log.d("VoiceEffectActivity", "Tick clicked — visible transcribed text='$textToSend'")
+        if (textToSend.isBlank()) {
+            Toast.makeText(this, "No speech detected. Please record again.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         showSavingBottomSheet()
-        viewModel.generateVoiceEffect(hiddenTranscript)
+        viewModel.generateVoiceEffect()
     }
 
+    // ── Audio controls (play back the locally recorded file) ──────────────────
+
     private fun setupAudioControls() {
-        // Play/Replay button
         binding.buttonReplay.setOnClickListener {
             if (viewModel.totalDuration.value <= 0) {
                 Toast.makeText(this, "Recorded audio not available yet", Toast.LENGTH_SHORT).show()
@@ -104,7 +119,6 @@ class VoiceEffectActivity : AppCompatActivity() {
             viewModel.playPauseAudio()
         }
 
-        // SeekBar
         binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
@@ -128,35 +142,34 @@ class VoiceEffectActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupVoiceGrid() {
-        voiceAdapter = VoiceGridAdapter { voice ->
-            viewModel.selectVoice(voice)
-        }
+    // ── Voice grid ────────────────────────────────────────────────────────────
 
+    private fun setupVoiceGrid() {
+        voiceAdapter = VoiceGridAdapter { voice -> viewModel.selectVoice(voice) }
         binding.rvVoices.apply {
             layoutManager = GridLayoutManager(this@VoiceEffectActivity, 3)
             adapter = voiceAdapter
         }
     }
 
+    // ── Observers ─────────────────────────────────────────────────────────────
+
     private fun observeViewModel() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                // Observe voices list
+
                 launch {
                     viewModel.voices.collect { voices ->
                         voiceAdapter.submitList(voices)
                     }
                 }
 
-                // Observe selected voice
                 launch {
                     viewModel.selectedVoice.collect { voice ->
                         voiceAdapter.setSelectedVoice(voice)
                     }
                 }
 
-                // Observe playback state
                 launch {
                     viewModel.isPlaying.collect { playing ->
                         if (playing) {
@@ -169,7 +182,6 @@ class VoiceEffectActivity : AppCompatActivity() {
                     }
                 }
 
-                // Observe total duration
                 launch {
                     viewModel.totalDuration.collect { duration ->
                         binding.seekBar.max = duration
@@ -177,15 +189,12 @@ class VoiceEffectActivity : AppCompatActivity() {
                     }
                 }
 
-                // Observe current position
                 launch {
                     viewModel.currentPosition.collect { position ->
                         binding.seekBar.progress = position
                         binding.textViewCurrentTime.text = formatTime(position)
                     }
                 }
-
-                // Observe voice generation result
                 launch {
                     viewModel.generateResult.collect { result ->
                         if (result != null) {
@@ -196,7 +205,7 @@ class VoiceEffectActivity : AppCompatActivity() {
                     }
                 }
 
-                // Observe voice generation error
+                // Backend call failed → show error
                 launch {
                     viewModel.generateError.collect { error ->
                         if (error != null) {
@@ -207,17 +216,31 @@ class VoiceEffectActivity : AppCompatActivity() {
                     }
                 }
 
-                // Observe loading state for voices
                 launch {
                     viewModel.voicesError.collect { error ->
                         if (error != null) {
-                            Toast.makeText(this@VoiceEffectActivity, error, Toast.LENGTH_LONG).show()
+                            Toast.makeText(this@VoiceEffectActivity, "Voices: $error", Toast.LENGTH_LONG).show()
                         }
                     }
                 }
             }
         }
     }
+
+    // ── Navigation ────────────────────────────────────────────────────────────
+
+    private fun navigateToAudioPlayer(response: GenerateAudioResponse) {
+        val intent = Intent(this, AudioPlayerActivity::class.java).apply {
+            putExtra(AudioPlayerActivity.EXTRA_AUDIO_URL, response.audioUrl)
+            putExtra(AudioPlayerActivity.EXTRA_AUDIO_BASE64, response.audioBase64)
+            putExtra(AudioPlayerActivity.EXTRA_FILE_PATH, response.filePath)
+            putExtra(AudioPlayerActivity.EXTRA_VOICE_NAME, viewModel.selectedVoice.value?.name ?: "")
+            putExtra(AudioPlayerActivity.EXTRA_INPUT_TEXT, binding.tvHiddenTranscribedText.text?.toString() ?: "")
+        }
+        startActivity(intent)
+    }
+
+    // ── Bottom sheet ──────────────────────────────────────────────────────────
 
     private fun showSavingBottomSheet() {
         val dialog = BottomSheetDialog(this)
@@ -233,16 +256,7 @@ class VoiceEffectActivity : AppCompatActivity() {
         savingDialog = null
     }
 
-    private fun navigateToAudioPlayer(response: GenerateAudioResponse) {
-        val intent = Intent(this, AudioPlayerActivity::class.java).apply {
-            putExtra(AudioPlayerActivity.EXTRA_FILE_PATH, response.filePath)
-            putExtra(AudioPlayerActivity.EXTRA_AUDIO_URL, response.audioUrl)
-            putExtra(AudioPlayerActivity.EXTRA_AUDIO_BASE64, response.audioBase64)
-            putExtra(AudioPlayerActivity.EXTRA_VOICE_NAME, viewModel.selectedVoice.value?.name ?: "")
-            putExtra(AudioPlayerActivity.EXTRA_INPUT_TEXT, "Voice Effect Applied")
-        }
-        startActivity(intent)
-    }
+    // ── Progress updates ──────────────────────────────────────────────────────
 
     private fun startProgressUpdates() {
         progressHandler.post(progressRunnable)
@@ -265,9 +279,7 @@ class VoiceEffectActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (viewModel.isPlaying.value) {
-            startProgressUpdates()
-        }
+        if (viewModel.isPlaying.value) startProgressUpdates()
     }
 
     override fun onDestroy() {

@@ -3,7 +3,9 @@ package com.example.aivoicechangersounds.activities
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.PopupMenu
 import com.example.aivoicechangersounds.data.models.VoiceAIMode
+import com.voicechanger.app.R
 import com.voicechanger.app.databinding.ActivityMainBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlin.jvm.java
@@ -18,6 +20,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setupClickListeners()
+        setupKebabMenu()
     }
 
     private fun setupClickListeners() {
@@ -50,5 +53,41 @@ class MainActivity : AppCompatActivity() {
             intent.putExtra("mode", VoiceAIMode.VOICE_CLONE.name)
             startActivity(intent)
         }
+
+    }
+    private fun setupKebabMenu() {
+        binding.menuhome.setOnClickListener { view ->
+
+            val popupMenu = PopupMenu(this, view)
+            popupMenu.menuInflater.inflate(R.menu.menu_home_kebab, popupMenu.menu)
+
+            try {
+                val field = popupMenu.javaClass.getDeclaredField("mPopup")
+                field.isAccessible = true
+                val menuPopupHelper = field.get(popupMenu)
+                val method = menuPopupHelper.javaClass
+                    .getDeclaredMethod("setForceShowIcon", Boolean::class.java)
+                method.invoke(menuPopupHelper, true)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            popupMenu.setOnMenuItemClickListener { menuItem ->
+                when (menuItem.itemId) {
+                    R.id.action_rename -> {
+                        navigateToSettingScreen()
+                        true
+                    }
+
+                    else -> false
+                }
+            }
+
+            popupMenu.show()
+        }
+    }
+    private fun navigateToSettingScreen(){
+        val intent= Intent(this@MainActivity, ActivitySetting::class.java)
+        startActivity(intent)
     }
 }
