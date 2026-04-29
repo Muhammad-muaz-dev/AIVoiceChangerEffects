@@ -1,6 +1,5 @@
 package com.example.aivoicechangersounds.Viewmodels
 
-import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -84,10 +83,9 @@ class RecordingViewModel @Inject constructor(
     fun onAudioButtonClicked() {
         when (_recordingState.value) {
             is RecordingState.Idle,
-            is RecordingState.Cancelled -> resumeRecording()
-            is RecordingState.Recording -> startRecording()
-            is RecordingState.Paused    -> pauseRecording()
-
+            is RecordingState.Cancelled -> startRecording()
+            is RecordingState.Recording -> pauseRecording()
+            is RecordingState.Paused    -> resumeRecording()
             else -> Unit
         }
     }
