@@ -51,9 +51,11 @@ class VoiceEffectActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // ── Step 1: Read data from Intent ─────────────────────────────────────
-        val audioFilePath = intent.getStringExtra(RecordingActivity.EXTRA_AUDIO_FILE_PATH) ?: ""
-        val transcribedText = intent.getStringExtra(RecordingActivity.EXTRA_TRANSCRIBED_TEXT) ?: ""
+//        val audioFilePath = intent.getStringExtra(RecordingActivity.EXTRA_AUDIO_FILE_PATH) ?: ""
+//        val transcribedText = intent.getStringExtra(RecordingActivity.EXTRA_TRANSCRIBED_TEXT) ?: ""
 
+        val audioFilePath = RecordingActivity.filepath
+        val transcribedText = RecordingActivity.text
         Log.d("VoiceEffectActivity", "audioFilePath='$audioFilePath'")
         Log.d("VoiceEffectActivity", "transcribedText='$transcribedText'")
 
@@ -68,6 +70,7 @@ class VoiceEffectActivity : AppCompatActivity() {
             viewModel.setAudioFilePath(audioFilePath)
         }
         binding.tvHiddenTranscribedText.text = transcribedText.trim()
+        Log.d("voiceeffect text","the text is ${transcribedText}")
         viewModel.setTranscribedText(transcribedText)
 
         setupToolbar()

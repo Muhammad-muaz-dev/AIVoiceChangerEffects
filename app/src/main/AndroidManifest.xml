@@ -2,11 +2,25 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <!--
+        REQUIRED on Android 11 (API 30) and above.
+
+        Without this <queries> block, SpeechRecognizer.isRecognitionAvailable()
+        returns false because Google's on-device speech service lives in another
+        package and the new package-visibility rules hide it from your app.
+        That makes STT silently do nothing — recording works, transcript stays
+        blank, and the user sees "No speech detected".
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
 
     <application
         android:name="com.example.aivoicechangersounds.androidhilt.Myapp"
@@ -16,6 +30,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.AIVoiceChanger"
         android:usesCleartextTraffic="true">
+
         <activity
             android:name="com.example.aivoicechangersounds.activities.ActivitySetting"
             android:exported="false" />
@@ -42,7 +57,6 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
