@@ -47,14 +47,23 @@ class RecordingActivity : AppCompatActivity() {
         observeViewModel()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Clear previous transcript/recording state when returning to this screen.
+        // This fixes "old text remains" after coming back from VoiceEffectActivity.
+        viewModel.onCancelClicked()
+    }
+
     private fun setUpToolbar() {
         binding.btnback.setOnClickListener { finish() }
     }
 
     private fun setupClickListeners() {
         binding.btnaudio.setOnClickListener {
+            Log.d("processing error","process started")
             if (hasRecordPermission()) {
                 viewModel.onAudioButtonClicked()
+                Log.d("processing error","View Model Called")
             } else {
                 requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
             }
@@ -101,6 +110,21 @@ class RecordingActivity : AppCompatActivity() {
                 binding.btndone.visibility = View.GONE
                 binding.waveformView.reset()
             }
+            is RecordingState.start->{
+                binding.btnaudio.setImageResource(R.drawable.ic_pause)
+                binding.btncancel.visibility = View.VISIBLE
+                binding.btndone.visibility = View.VISIBLE
+            }
+            is RecordingState.Paused -> {
+                binding.btnaudio.setImageResource(R.drawable.ic_play)
+                binding.btncancel.visibility = View.VISIBLE
+                binding.btndone.visibility = View.VISIBLE
+            }
+            is RecordingState.Resume->{
+                binding.btnaudio.setImageResource(R.drawable.ic_pause)
+                binding.btncancel.visibility= View.VISIBLE
+                binding.btndone.visibility= View.VISIBLE
+            }
 
             is RecordingState.Recording -> {
                 binding.btnaudio.setImageResource(R.drawable.ic_pause)
@@ -108,15 +132,11 @@ class RecordingActivity : AppCompatActivity() {
                 binding.btndone.visibility = View.VISIBLE
             }
 
-            is RecordingState.Paused -> {
-                binding.btnaudio.setImageResource(R.drawable.ic_play)
-                binding.btncancel.visibility = View.VISIBLE
-                binding.btndone.visibility = View.VISIBLE
-            }
-
             is RecordingState.Done -> {
-                Log.d("debuggg", "Done → filePath='${state.filePath}' text='${state.transcribedText}'")
-                navigateToNextScreen(state.filePath, state.transcribedText)
+                val uiTranscript = binding.tvTranscribed.text?.toString()?.trim().orEmpty()
+                val textToPass = state.transcribedText.trim().ifBlank { uiTranscript }
+                Log.d("debuggg", "Done → filePath='${state.filePath}' text='$textToPass'")
+                navigateToNextScreen(state.filePath, textToPass)
             }
 
             is RecordingState.Cancelled -> {

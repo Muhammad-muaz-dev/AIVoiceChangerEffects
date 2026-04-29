@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.MediaRecorder
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -33,7 +34,9 @@ class AudioRecorderRepository @Inject constructor(
     }
 
     suspend fun startRecording(): String = withContext(Dispatchers.IO) {
+
         val outputDir = File(context.filesDir, "recordings")
+        Log.d("repository", "startRecording: repository is calling in ")
         if (!outputDir.exists()) outputDir.mkdirs()
 
         val fileName = "recording_${System.currentTimeMillis()}.m4a"
@@ -41,10 +44,8 @@ class AudioRecorderRepository @Inject constructor(
         currentFilePath = outputFile.absolutePath
 
         mediaRecorder = createMediaRecorder().apply {
-            // VOICE_RECOGNITION is the audio source the OS is most willing to share
-            // with SpeechRecognizer running concurrently. With AudioSource.MIC the
-            // second client is denied on most devices and STT silently fails.
-            setAudioSource(MediaRecorder.AudioSource.MIC)   // was VOICE_RECOGNITION
+
+            setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
             setAudioEncodingBitRate(128_000)
@@ -57,6 +58,7 @@ class AudioRecorderRepository @Inject constructor(
         Log.d(TAG, "Recording started → $currentFilePath")
         currentFilePath!!
     }
+
 
     suspend fun pauseRecording() = withContext(Dispatchers.IO) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -85,9 +87,10 @@ class AudioRecorderRepository @Inject constructor(
             recorder?.stop()
         } catch (e: Exception) {
             Log.e(TAG, "stop failed: ${e.message}")
-            // If stop() throws (e.g. recording too short), the file is invalid
-            currentFilePath?.let { File(it).takeIf { f -> f.exists() }?.delete() }
-            currentFilePath = null
+            // Important:
+            // Some devices throw on stop() even though the file may still contain
+            // valid audio bytes. Don't immediately wipe the path; let the
+            // sanity-check below decide based on file size.
         }
         try {
             recorder?.release()
@@ -100,7 +103,7 @@ class AudioRecorderRepository @Inject constructor(
         // Sanity check: file must exist and be non-empty
         if (path != null) {
             val f = File(path)
-            Log.d("file path","$f")
+            Log.d("AudioRecorderRepository", "stopRecording candidate=$f exists=${f.exists()} len=${f.length()}")
             if (!f.exists() || f.length() == 0L) {
                 Log.w(TAG, "Recorded file missing or empty: $path")
                 if (f.exists()) f.delete()

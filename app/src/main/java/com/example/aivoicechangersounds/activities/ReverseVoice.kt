@@ -107,6 +107,8 @@ class ReverseVoice : AppCompatActivity() {
                 binding.btndone.visibility = View.GONE
                 binding.waveformView.reset()
             }
+            is RecordingState.start ->{}
+            is RecordingState.Resume  ->{}
 
             is RecordingState.Recording -> {
                 binding.btnaudio.setImageResource(R.drawable.ic_pause)

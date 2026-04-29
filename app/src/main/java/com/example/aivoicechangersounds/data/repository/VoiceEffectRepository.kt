@@ -2,17 +2,10 @@ package com.example.aivoicechangersounds.data.repository
 
 import android.util.Log
 import com.example.aivoicechangersounds.data.api.interfaces.ApiServiceVoices
-import com.example.aivoicechangersounds.data.api.interfaces.ApiServicesGenerateAudio
-import com.example.aivoicechangersounds.data.models.GenerateVoiceResponse
 import com.example.aivoicechangersounds.data.models.Voice
 import com.example.aivoicechangersounds.utils.Resource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -58,6 +51,5 @@ class VoiceEffectRepository @Inject constructor(
             }
         }
     }
-
 
 }

@@ -15,31 +15,11 @@ import kotlinx.coroutines.flow.StateFlow
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
-
-/**
- * Wrapper around Android's [SpeechRecognizer] that exposes the live transcript
- * as a [StateFlow].
- *
- * Bug fix history:
- *   1. The original version called `recognizer.stopListening()` immediately
- *      followed by `recognizer.cancel()` and `recognizer.destroy()` inside
- *      [stopListening]. `cancel()` aborts any pending recognition result, so
- *      the final `onResults` callback was never delivered and the transcript
- *      stayed empty / stale.
- *
- *   2. Now [stopListening] only asks the engine to finalize (it triggers the
- *      final `onResults`) and DOES NOT cancel/destroy the recognizer. The
- *      caller is expected to wait for the transcript to settle and then call
- *      [release] to actually tear the recognizer down.
- *
- *   3. Verbose listener logging added so we can tell whether the engine ever
- *      received audio (onBeginningOfSpeech / onPartialResults) or whether it
- *      ran to completion with silence (onError 7 = NO_MATCH).
- */
 @Singleton
 class SpeechToTextHelper @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
+    private val transcriptLock = Any()
 
     companion object {
         private const val TAG = "SpeechToTextHelper"
@@ -82,7 +62,7 @@ class SpeechToTextHelper @Inject constructor(
     fun startListening(resetTranscript: Boolean = true) {
         mainHandler.post {
             if (resetTranscript) {
-                accumulatedText.setLength(0)
+                synchronized(transcriptLock) { accumulatedText.setLength(0) }
                 _transcribedText.value = ""
                 partialCount = 0
                 resultCount = 0
@@ -105,11 +85,17 @@ class SpeechToTextHelper @Inject constructor(
         isActive = false
         mainHandler.post {
             Log.d(
-                TAG,
+                "countsinstt",
                 "stopListening() — partials=$partialCount results=$resultCount " +
                         "beganSpeech=$beganSpeech currentText='${_transcribedText.value}'"
             )
             try {
+                val currentText = _transcribedText.value.trim()
+                if (currentText.isNotBlank() && synchronized(transcriptLock) { accumulatedText.isEmpty() }) {
+                    synchronized(transcriptLock) { accumulatedText.append(currentText) }
+                    _transcribedText.value = accumulatedText.toString()
+                    Log.d(TAG, "stopListening() preserved partial as final='$currentText'")
+                }
                 // Triggers the final onResults / onError callback.
                 speechRecognizer?.stopListening()
             } catch (e: Exception) {
@@ -118,12 +104,6 @@ class SpeechToTextHelper @Inject constructor(
         }
     }
 
-    // -----------------------------
-    // RELEASE
-    //
-    // Tears the recognizer down. Safe to call multiple times.
-    // Call this AFTER you've waited for the final transcript.
-    // -----------------------------
     fun release() {
         isActive = false
         mainHandler.post {
@@ -137,6 +117,13 @@ class SpeechToTextHelper @Inject constructor(
             }
             speechRecognizer = null
         }
+    }
+
+    fun getTranscriptSnapshot(): String {
+        val current = _transcribedText.value.trim()
+        if (current.isNotBlank()) return current
+        val accumulated = synchronized(transcriptLock) { accumulatedText.toString().trim() }
+        return accumulated
     }
 
     // -----------------------------
@@ -218,9 +205,6 @@ class SpeechToTextHelper @Inject constructor(
         }
 
         override fun onResults(results: Bundle?) {
-            // ALWAYS commit results to the accumulated transcript, even if
-            // isActive is now false. This is what allows the final onResults
-            // (delivered after stopListening) to update the StateFlow.
             val matches =
                 results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
 
@@ -230,11 +214,13 @@ class SpeechToTextHelper @Inject constructor(
                 val text = matches[0].trim()
 
                 if (text.isNotEmpty()) {
-                    if (accumulatedText.isNotEmpty()) accumulatedText.append(" ")
-                    accumulatedText.append(text)
+                    synchronized(transcriptLock) {
+                        if (accumulatedText.isNotEmpty()) accumulatedText.append(" ")
+                        accumulatedText.append(text)
+                    }
 
-                    _transcribedText.value = accumulatedText.toString()
-                    Log.d(TAG, "onResults committed='${_transcribedText.value}'")
+                    _transcribedText.value = synchronized(transcriptLock) { accumulatedText.toString() }
+                    Log.d("onresultstext", "onResults committed='${_transcribedText.value}'")
                 } else {
                     Log.d(TAG, "onResults — empty match")
                 }
@@ -246,16 +232,15 @@ class SpeechToTextHelper @Inject constructor(
         }
 
         override fun onPartialResults(partialResults: Bundle?) {
-            if (!isActive) return
-
             val matches =
                 partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
 
             if (!matches.isNullOrEmpty()) {
                 val partial = matches[0]
+                val accumulatedPrefix = synchronized(transcriptLock) { accumulatedText.toString() }
                 val display =
-                    if (accumulatedText.isEmpty()) partial
-                    else "$accumulatedText $partial"
+                    if (accumulatedPrefix.isEmpty()) partial
+                    else "$accumulatedPrefix $partial"
 
                 _transcribedText.value = display
                 partialCount++

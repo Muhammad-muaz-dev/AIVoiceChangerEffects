@@ -1,6 +1,5 @@
 package com.example.aivoicechangersounds.Viewmodels
 
-import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,18 +23,9 @@ class RecordingViewModel @Inject constructor(
 
     companion object {
         private const val TAG = "RecordingViewModel"
-
-        // Time we give SpeechRecognizer to fully grab the mic before MediaRecorder starts.
         private const val STT_WARMUP_DELAY_MS = 350L
-
-        // Max time we'll wait for SpeechRecognizer's final onResults to land
-        // in the transcript flow after asking it to stop.
         private const val STT_FINALIZATION_MAX_WAIT_MS = 2500L
-
-        // We consider the transcript "settled" when it hasn't changed for this long.
         private const val STT_FINALIZATION_STABLE_MS = 500L
-
-        // Polling interval while we're waiting for the transcript to settle.
         private const val STT_FINALIZATION_POLL_MS = 100L
     }
 
@@ -82,12 +72,13 @@ class RecordingViewModel @Inject constructor(
 
 
     fun onAudioButtonClicked() {
+        Log.d("processing error","function called")
         when (_recordingState.value) {
             is RecordingState.Idle,
-            is RecordingState.Cancelled -> resumeRecording()
-            is RecordingState.Recording -> startRecording()
-            is RecordingState.Paused    -> pauseRecording()
-
+            is RecordingState.start     ->startRecording()
+            is RecordingState.Recording -> pauseRecording()
+            is RecordingState.Paused,
+            is RecordingState.Resume    -> resumeRecording()
             else -> Unit
         }
     }
@@ -101,24 +92,19 @@ class RecordingViewModel @Inject constructor(
                 _liveTranscribedText.value = ""
                 _elapsedTime.value = 0
 
-                // 1. STT first
-                speechToTextHelper.startListening(resetTranscript = true)
-
-                // 2. Warm-up
-                delay(STT_WARMUP_DELAY_MS)
-
-                // 3. RE-ENABLE THIS LINE:
+                // 1. START AUDIO FIRST (important)
                 currentFilePath = audioRecorderRepository.startRecording()
 
-                _recordingState.value = RecordingState.Recording
-                startTimer()
+                // 2. START STT IMMEDIATELY AFTER
+                speechToTextHelper.startListening(resetTranscript = true)
 
-                // 4. RE-ENABLE THIS LINE TOO (it needs the recorder running):
+                // 3. UPDATE STATE
+                _recordingState.value = RecordingState.Recording
+
+                startTimer()
                 startAmplitudeUpdates()
+
             } catch (e: Exception) {
-                Log.e(TAG, "startRecording failed: ${e.message}", e)
-                speechToTextHelper.stopListening()
-                speechToTextHelper.release()
                 _recordingState.value =
                     RecordingState.Error(e.message ?: "Failed to start recording")
             }
@@ -129,9 +115,6 @@ class RecordingViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 audioRecorderRepository.pauseRecording()
-
-                // Ask STT to finalize the current segment, give it a moment to
-                // commit the result to the transcript flow, then release.
                 speechToTextHelper.stopListening()
                 waitForTranscriptToSettle()
                 speechToTextHelper.release()
@@ -149,6 +132,7 @@ class RecordingViewModel @Inject constructor(
     private fun resumeRecording() {
         viewModelScope.launch {
             try {
+                Log.d("hello","this ois calling in ")
                 // STT first again, then a tiny delay, then resume MediaRecorder.
                 // resetTranscript = false keeps the accumulated text.
                 speechToTextHelper.startListening(resetTranscript = false)
@@ -165,7 +149,7 @@ class RecordingViewModel @Inject constructor(
         }
     }
 
-    fun onCancelClicked() {
+ fun onCancelClicked() {
         viewModelScope.launch {
             // Cancelling means we don't care about the transcript — just tear
             // everything down immediately.
@@ -182,34 +166,26 @@ class RecordingViewModel @Inject constructor(
     }
 
     fun onDoneClicked() {
+
         viewModelScope.launch {
             try {
-                // 1. Stop MediaRecorder FIRST so the mic is released. STT
-                //    can now fully finalize without competing for audio.
+                val transcriptSnapshot = _liveTranscribedText.value.trim()
+                val helperSnapshotBeforeStop = speechToTextHelper.getTranscriptSnapshot()
+
                 val filePath = audioRecorderRepository.stopRecording()
-
-                // 2. Ask SpeechRecognizer to finalize. This triggers its
-                //    final onResults callback (asynchronously). Critically,
-                //    stopListening() does NOT cancel/destroy the recognizer
-                //    — that would discard the pending result.
+                Log.d("function called","Function is calling ")
                 speechToTextHelper.stopListening()
-
-                // 3. Wait for the final onResults to update the transcript
-                //    flow. We poll until the value stops changing (or until
-                //    we hit the max wait).
-                val finalText = waitForTranscriptToSettle()
-
-                // 4. Now safe to actually destroy the recognizer.
+                val finalText = waitForTranscriptToSettle(transcriptSnapshot)
+                Log.d(
+                    "finalresultbytranscribedtext",
+                    "Done → filePath=$filePath, finalText='$finalText', " +
+                        "uiSnapshot='$transcriptSnapshot', helperBeforeStop='$helperSnapshotBeforeStop', " +
+                        "latest='$latestTranscribedText'"
+                )
                 speechToTextHelper.release()
-
-                Log.d(TAG, "Done → filePath=$filePath, finalText='$finalText'")
-
                 stopTimer()
                 stopAmplitudeUpdates()
                 _elapsedTime.value = 0
-
-                // Your backend flow needs ONLY text + selected voice.
-                // If the audio file failed to save (null/empty), do not block STT navigation.
                 _recordingState.value = RecordingState.Done(
                     filePath = filePath.orEmpty(),
                     transcribedText = finalText
@@ -222,22 +198,22 @@ class RecordingViewModel @Inject constructor(
             }
         }
     }
-    private suspend fun waitForTranscriptToSettle(): String {
+    private suspend fun waitForTranscriptToSettle(transcriptSnapshot: String = ""): String {
         val start = System.currentTimeMillis()
-        var lastValue = speechToTextHelper.transcribedText.value
+        var lastValue = speechToTextHelper.getTranscriptSnapshot()
+        Log.d("pasttext","$lastValue")
         var lastChange = System.currentTimeMillis()
 
         while (System.currentTimeMillis() - start < STT_FINALIZATION_MAX_WAIT_MS) {
             delay(STT_FINALIZATION_POLL_MS)
 
-            val current = speechToTextHelper.transcribedText.value
+            val current = speechToTextHelper.getTranscriptSnapshot()
+            Log.d("pasttext", "waitForTranscriptToSettle: $current")
             if (current != lastValue) {
                 lastValue = current
                 lastChange = System.currentTimeMillis()
                 continue
             }
-
-            // Value hasn't changed; if it's non-blank and stable, we're done.
             if (current.isNotBlank() &&
                 System.currentTimeMillis() - lastChange >= STT_FINALIZATION_STABLE_MS
             ) {
@@ -245,9 +221,13 @@ class RecordingViewModel @Inject constructor(
             }
         }
 
-        val final = speechToTextHelper.transcribedText.value
+        val final = speechToTextHelper.getTranscriptSnapshot()
+        val live = _liveTranscribedText.value.trim()
+        Log.d("pasttext","the final text is $final")
         return when {
             final.isNotBlank() -> final
+            live.isNotBlank() -> live
+            transcriptSnapshot.isNotBlank() -> transcriptSnapshot
             latestTranscribedText.isNotBlank() -> latestTranscribedText
             else -> ""
         }

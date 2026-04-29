@@ -3,7 +3,9 @@ package com.example.aivoicechangersounds.data.models
 sealed class RecordingState {
     object Idle : RecordingState()
     object Recording : RecordingState()
+    object Resume: RecordingState()
     object Paused : RecordingState()
+    object start : RecordingState()
     data class Done(
         val filePath: String,
         val transcribedText: String   // STT output — passed to VoiceEffectActivity
