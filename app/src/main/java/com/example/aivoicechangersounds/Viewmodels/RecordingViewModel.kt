@@ -80,12 +80,14 @@ class RecordingViewModel @Inject constructor(
 
     // ── Button handler ───────────────────────────────────────────────────────
 
+
     fun onAudioButtonClicked() {
         when (_recordingState.value) {
             is RecordingState.Idle,
             is RecordingState.Cancelled -> resumeRecording()
             is RecordingState.Recording -> startRecording()
             is RecordingState.Paused    -> pauseRecording()
+
             else -> Unit
         }
     }
@@ -206,15 +208,12 @@ class RecordingViewModel @Inject constructor(
                 stopAmplitudeUpdates()
                 _elapsedTime.value = 0
 
-                if (filePath.isNullOrBlank()) {
-                    _recordingState.value =
-                        RecordingState.Error("Recording file not found")
-                } else {
-                    _recordingState.value = RecordingState.Done(
-                        filePath = filePath,
-                        transcribedText = finalText
-                    )
-                }
+                // Your backend flow needs ONLY text + selected voice.
+                // If the audio file failed to save (null/empty), do not block STT navigation.
+                _recordingState.value = RecordingState.Done(
+                    filePath = filePath.orEmpty(),
+                    transcribedText = finalText
+                )
             } catch (e: Exception) {
                 Log.e(TAG, "onDoneClicked failed: ${e.message}", e)
                 speechToTextHelper.release()

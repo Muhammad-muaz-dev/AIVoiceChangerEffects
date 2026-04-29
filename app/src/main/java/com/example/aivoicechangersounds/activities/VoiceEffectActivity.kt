@@ -51,11 +51,12 @@ class VoiceEffectActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // ── Step 1: Read data from Intent ─────────────────────────────────────
-//        val audioFilePath = intent.getStringExtra(RecordingActivity.EXTRA_AUDIO_FILE_PATH) ?: ""
-//        val transcribedText = intent.getStringExtra(RecordingActivity.EXTRA_TRANSCRIBED_TEXT) ?: ""
-
-        val audioFilePath = RecordingActivity.filepath
-        val transcribedText = RecordingActivity.text
+        // IMPORTANT: use Intent extras, not RecordingActivity's companion vars.
+        // Companion vars can reset to empty strings if the app recreates the Activity.
+        val audioFilePath =
+            intent.getStringExtra(RecordingActivity.EXTRA_AUDIO_FILE_PATH) ?: ""
+        val transcribedText =
+            intent.getStringExtra(RecordingActivity.EXTRA_TRANSCRIBED_TEXT) ?: ""
         Log.d("VoiceEffectActivity", "audioFilePath='$audioFilePath'")
         Log.d("VoiceEffectActivity", "transcribedText='$transcribedText'")
 

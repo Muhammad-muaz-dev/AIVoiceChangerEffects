@@ -115,9 +115,7 @@ class RecordingActivity : AppCompatActivity() {
             }
 
             is RecordingState.Done -> {
-                filepath=state.filePath
-                text=state.transcribedText
-                Log.d("debuggg","$filepath"+"$text")
+                Log.d("debuggg", "Done → filePath='${state.filePath}' text='${state.transcribedText}'")
                 navigateToNextScreen(state.filePath, state.transcribedText)
             }
 
@@ -157,8 +155,5 @@ class RecordingActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_AUDIO_FILE_PATH = "extra_audio_file_path"
         const val EXTRA_TRANSCRIBED_TEXT = "extra_transcribed_text"
-
-        var filepath=""
-        var text=""
     }
 }

@@ -49,6 +49,8 @@ class VoiceGridAdapter(
             // Load avatar image
             Glide.with(binding.imageViewAvatar.context)
                 .load(voice.avatar)
+                .placeholder(R.drawable.ic_voice_placeholder)
+                .error(R.drawable.ic_voice_placeholder)
                 .transition(DrawableTransitionOptions.withCrossFade())
                 .into(binding.imageViewAvatar)
 

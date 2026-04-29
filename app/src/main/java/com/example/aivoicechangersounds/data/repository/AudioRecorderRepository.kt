@@ -107,7 +107,7 @@ class AudioRecorderRepository @Inject constructor(
                 return@withContext null
             }
         }
-       path
+        path
     }
 
     suspend fun cancelRecording() = withContext(Dispatchers.IO) {

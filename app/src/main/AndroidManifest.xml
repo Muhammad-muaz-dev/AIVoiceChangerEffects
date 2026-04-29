@@ -6,7 +6,6 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-
     <!--
         REQUIRED on Android 11 (API 30) and above.
 
@@ -30,7 +29,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.AIVoiceChanger"
         android:usesCleartextTraffic="true">
-
+        <activity
+            android:name="com.example.aivoicechangersounds.activities.LanguageActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.example.aivoicechangersounds.activities.SplashActivity"
+            android:exported="false" />
         <activity
             android:name="com.example.aivoicechangersounds.activities.ActivitySetting"
             android:exported="false" />
@@ -57,6 +61,7 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
