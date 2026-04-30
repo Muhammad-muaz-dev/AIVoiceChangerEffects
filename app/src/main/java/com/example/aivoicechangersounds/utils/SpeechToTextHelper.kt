@@ -22,7 +22,7 @@ class SpeechToTextHelper @Inject constructor(
     private val transcriptLock = Any()
 
     companion object {
-        private const val TAG = "SpeechToTextHelper"
+        private const val TAG = "VOICE_FLOW"
 
         private fun errorName(error: Int): String = when (error) {
             SpeechRecognizer.ERROR_NETWORK_TIMEOUT      -> "NETWORK_TIMEOUT(1)"
@@ -85,9 +85,9 @@ class SpeechToTextHelper @Inject constructor(
         isActive = false
         mainHandler.post {
             Log.d(
-                "countsinstt",
-                "stopListening() — partials=$partialCount results=$resultCount " +
-                        "beganSpeech=$beganSpeech currentText='${_transcribedText.value}'"
+                TAG,
+                "SpeechToTextHelper.stopListening() partials=$partialCount results=$resultCount " +
+                    "beganSpeech=$beganSpeech currentText='${_transcribedText.value}'"
             )
             try {
                 val currentText = _transcribedText.value.trim()
@@ -193,15 +193,23 @@ class SpeechToTextHelper @Inject constructor(
         }
 
         override fun onError(error: Int) {
+            val name = errorName(error)
             Log.d(
                 TAG,
-                "STT error=${errorName(error)} active=$isActive " +
-                        "partials=$partialCount results=$resultCount beganSpeech=$beganSpeech"
+                "STT error=$name active=$isActive " +
+                    "partials=$partialCount results=$resultCount beganSpeech=$beganSpeech"
             )
+
+            if (error == SpeechRecognizer.ERROR_NETWORK) {
+                Log.e(TAG, "STT Network Error: Please check internet connection or Google app settings.")
+            }
+
             if (!isActive) return
 
             // Auto-restart on transient errors so the session keeps going.
-            mainHandler.postDelayed({ createAndStart() }, 700)
+            // But don't restart too fast on persistent errors like NETWORK
+            val restartDelay = if (error == SpeechRecognizer.ERROR_NETWORK) 2000L else 700L
+            mainHandler.postDelayed({ createAndStart() }, restartDelay)
         }
 
         override fun onResults(results: Bundle?) {
@@ -220,7 +228,7 @@ class SpeechToTextHelper @Inject constructor(
                     }
 
                     _transcribedText.value = synchronized(transcriptLock) { accumulatedText.toString() }
-                    Log.d("onresultstext", "onResults committed='${_transcribedText.value}'")
+                    Log.d(TAG, "SpeechToTextHelper.onResults committed='${_transcribedText.value}'")
                 } else {
                     Log.d(TAG, "onResults — empty match")
                 }

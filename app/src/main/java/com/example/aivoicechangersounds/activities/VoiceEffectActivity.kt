@@ -29,12 +29,17 @@ import java.io.File
 
 @AndroidEntryPoint
 class VoiceEffectActivity : AppCompatActivity() {
+    companion object {
+        private const val TAG = "VOICE_FLOW"
+    }
 
     private lateinit var binding: ActivityVoiceEffectBinding
     private val viewModel: VoiceEffectViewModel by viewModels()
 
     private lateinit var voiceAdapter: VoiceGridAdapter
     private var savingDialog: BottomSheetDialog? = null
+    private var inputAudioFilePath: String = ""
+    private var inputTranscribedText: String = ""
 
     private val progressHandler = Handler(Looper.getMainLooper())
     private val progressRunnable = object : Runnable {
@@ -49,30 +54,36 @@ class VoiceEffectActivity : AppCompatActivity() {
         enableEdgeToEdge()
         binding = ActivityVoiceEffectBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        Log.d(TAG, "VoiceEffectActivity.onCreate()")
 
         // ── Step 1: Read data from Intent ─────────────────────────────────────
         // IMPORTANT: use Intent extras, not RecordingActivity's companion vars.
         // Companion vars can reset to empty strings if the app recreates the Activity.
-        val audioFilePath =
-            intent.getStringExtra(RecordingActivity.EXTRA_AUDIO_FILE_PATH) ?: ""
-        val transcribedText =
-            intent.getStringExtra(RecordingActivity.EXTRA_TRANSCRIBED_TEXT) ?: ""
-        Log.d("VoiceEffectActivity", "audioFilePath='$audioFilePath'")
-        Log.d("VoiceEffectActivity", "transcribedText='$transcribedText'")
+        inputAudioFilePath = intent.getStringExtra(RecordingActivity.EXTRA_AUDIO_FILE_PATH) ?: ""
+        inputTranscribedText = intent.getStringExtra(RecordingActivity.EXTRA_TRANSCRIBED_TEXT) ?: ""
+        Log.d(TAG, "VoiceEffectActivity.input audioFilePath='$inputAudioFilePath'")
+        Log.d(TAG, "VoiceEffectActivity.input transcribedText='$inputTranscribedText'")
 
-        if (audioFilePath.isBlank() && transcribedText.isBlank()) {
-            Toast.makeText(this, "No audio or text received", Toast.LENGTH_SHORT).show()
+        if (inputAudioFilePath.isBlank() || !File(inputAudioFilePath).exists()) {
+            Log.e(TAG, "VoiceEffectActivity.invalid audio path: '$inputAudioFilePath'")
+            Toast.makeText(this, "Recorded file not found. Please record again.", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
+        if (inputTranscribedText.isBlank()) {
+            Log.e(TAG, "VoiceEffectActivity.invalid transcribed text: blank")
+            Toast.makeText(this, "No speech text found. Please record again.", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
         // ── Step 2: Pass audio file to ViewModel for local playback ───────────
-        if (audioFilePath.isNotBlank() && File(audioFilePath).exists()) {
-            viewModel.setAudioFilePath(audioFilePath)
-        }
-        binding.tvHiddenTranscribedText.text = transcribedText.trim()
-        Log.d("voiceeffect text","the text is ${transcribedText}")
-        viewModel.setTranscribedText(transcribedText)
+        viewModel.setAudioFilePath(inputAudioFilePath)
+        Log.d(TAG, "VoiceEffectActivity.pass file to VM: $inputAudioFilePath")
+        binding.tvHiddenTranscribedText.text = inputTranscribedText.trim()
+        Log.d("voiceeffect text","the text is $inputTranscribedText")
+        viewModel.setTranscribedText(inputTranscribedText)
 
         setupToolbar()
         setupAudioControls()
@@ -101,8 +112,8 @@ class VoiceEffectActivity : AppCompatActivity() {
             return
         }
 
-        val textToSend = binding.tvHiddenTranscribedText.text?.toString()?.trim().orEmpty()
-        Log.d("VoiceEffectActivity", "Tick clicked — visible transcribed text='$textToSend'")
+        val textToSend = inputTranscribedText.trim()
+        Log.d(TAG, "VoiceEffectActivity.tick clicked text='$textToSend'")
         if (textToSend.isBlank()) {
             Toast.makeText(this, "No speech detected. Please record again.", Toast.LENGTH_SHORT).show()
             return
@@ -117,9 +128,11 @@ class VoiceEffectActivity : AppCompatActivity() {
     private fun setupAudioControls() {
         binding.buttonReplay.setOnClickListener {
             if (viewModel.totalDuration.value <= 0) {
+                Log.w(TAG, "VoiceEffectActivity.replay blocked duration=${viewModel.totalDuration.value}")
                 Toast.makeText(this, "Recorded audio not available yet", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+            Log.d(TAG, "VoiceEffectActivity.replay tapped")
             viewModel.playPauseAudio()
         }
 
@@ -202,6 +215,7 @@ class VoiceEffectActivity : AppCompatActivity() {
                 launch {
                     viewModel.generateResult.collect { result ->
                         if (result != null) {
+                            Log.d(TAG, "VoiceEffectActivity.generateResult -> navigate AudioPlayer")
                             dismissSavingBottomSheet()
                             navigateToAudioPlayer(result)
                             viewModel.clearGenerateResult()
@@ -213,6 +227,7 @@ class VoiceEffectActivity : AppCompatActivity() {
                 launch {
                     viewModel.generateError.collect { error ->
                         if (error != null) {
+                            Log.e(TAG, "VoiceEffectActivity.generateError: $error")
                             dismissSavingBottomSheet()
                             Toast.makeText(this@VoiceEffectActivity, error, Toast.LENGTH_LONG).show()
                             viewModel.clearGenerateResult()
@@ -234,12 +249,13 @@ class VoiceEffectActivity : AppCompatActivity() {
     // ── Navigation ────────────────────────────────────────────────────────────
 
     private fun navigateToAudioPlayer(response: GenerateAudioResponse) {
+        Log.d(TAG, "VoiceEffectActivity.navigateToAudioPlayer(url='${response.audioUrl}', filePath='${response.filePath}', textLen=${inputTranscribedText.length})")
         val intent = Intent(this, AudioPlayerActivity::class.java).apply {
             putExtra(AudioPlayerActivity.EXTRA_AUDIO_URL, response.audioUrl)
             putExtra(AudioPlayerActivity.EXTRA_AUDIO_BASE64, response.audioBase64)
             putExtra(AudioPlayerActivity.EXTRA_FILE_PATH, response.filePath)
             putExtra(AudioPlayerActivity.EXTRA_VOICE_NAME, viewModel.selectedVoice.value?.name ?: "")
-            putExtra(AudioPlayerActivity.EXTRA_INPUT_TEXT, binding.tvHiddenTranscribedText.text?.toString() ?: "")
+            putExtra(AudioPlayerActivity.EXTRA_INPUT_TEXT, inputTranscribedText)
         }
         startActivity(intent)
     }

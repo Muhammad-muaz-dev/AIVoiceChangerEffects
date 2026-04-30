@@ -18,11 +18,12 @@ class AudioRecorderRepository @Inject constructor(
 ) {
 
     companion object {
-        private const val TAG = "AudioRecorderRepository"
+        private const val TAG = "VOICE_FLOW"
     }
 
     private var mediaRecorder: MediaRecorder? = null
     private var currentFilePath: String? = null
+    fun supportsPauseResume(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
 
     private fun createMediaRecorder(): MediaRecorder {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -36,7 +37,7 @@ class AudioRecorderRepository @Inject constructor(
     suspend fun startRecording(): String = withContext(Dispatchers.IO) {
 
         val outputDir = File(context.filesDir, "recordings")
-        Log.d("repository", "startRecording: repository is calling in ")
+        Log.d(TAG, "AudioRecorderRepository.startRecording()")
         if (!outputDir.exists()) outputDir.mkdirs()
 
         val fileName = "recording_${System.currentTimeMillis()}.m4a"
@@ -103,7 +104,7 @@ class AudioRecorderRepository @Inject constructor(
         // Sanity check: file must exist and be non-empty
         if (path != null) {
             val f = File(path)
-            Log.d("AudioRecorderRepository", "stopRecording candidate=$f exists=${f.exists()} len=${f.length()}")
+            Log.d(TAG, "AudioRecorderRepository.stopRecording() candidate=$f exists=${f.exists()} len=${f.length()}")
             if (!f.exists() || f.length() == 0L) {
                 Log.w(TAG, "Recorded file missing or empty: $path")
                 if (f.exists()) f.delete()

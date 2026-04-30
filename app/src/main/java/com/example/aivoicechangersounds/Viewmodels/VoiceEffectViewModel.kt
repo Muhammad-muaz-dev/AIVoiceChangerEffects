@@ -21,6 +21,9 @@ class VoiceEffectViewModel @Inject constructor(
     private val voiceEffectRepository: VoiceEffectRepository,  // for getVoices()
     private val voiceRepository: VoiceRepository               // for generateAudio() TTS call
 ) : ViewModel() {
+    companion object {
+        private const val TAG = "VOICE_FLOW"
+    }
 
     // ── Voices ────────────────────────────────────────────────────────────────
 
@@ -74,12 +77,13 @@ class VoiceEffectViewModel @Inject constructor(
 
     fun setAudioFilePath(path: String) {
         audioFilePath = path
+        Log.d(TAG, "VoiceEffectViewModel.setAudioFilePath(path='$path')")
         prepareMediaPlayer(path)
     }
 
     fun setTranscribedText(text: String) {
         transcribedText = text.trim()
-        Log.d("VoiceEffectViewModel", "Transcribed text set: '$transcribedText'")
+        Log.d(TAG, "VoiceEffectViewModel.setTranscribedText('$transcribedText')")
     }
 
     // ── Voices ────────────────────────────────────────────────────────────────
@@ -91,11 +95,11 @@ class VoiceEffectViewModel @Inject constructor(
             when (val result = voiceEffectRepository.getVoices(language)) {
                 is Resource.Success -> {
                     _voices.value = result.data
-                    Log.d("VoiceEffectViewModel", "Voices loaded: ${result.data.size}")
+                    Log.d(TAG, "VoiceEffectViewModel.voices loaded: ${result.data.size}")
                 }
                 is Resource.Error -> {
                     _voicesError.value = result.message
-                    Log.e("VoiceEffectViewModel", "Voices error: ${result.message}")
+                    Log.e(TAG, "VoiceEffectViewModel.voices error: ${result.message}")
                 }
                 else -> {}
             }
@@ -105,7 +109,7 @@ class VoiceEffectViewModel @Inject constructor(
 
     fun selectVoice(voice: Voice) {
         _selectedVoice.value = voice
-        Log.d("VoiceEffectViewModel", "Voice selected: ${voice.name} id=${voice.id}")
+        Log.d(TAG, "VoiceEffectViewModel.voice selected: ${voice.name} id=${voice.id}")
     }
 
     fun generateVoiceEffect() {
@@ -118,11 +122,11 @@ class VoiceEffectViewModel @Inject constructor(
         val textToSend = transcribedText.trim()
         if (textToSend.isBlank()) {
             _generateError.value = "No speech detected. Please record again."
-            Log.w("VoiceEffectViewModel", "Generate blocked: transcribed text is empty")
+            Log.w(TAG, "VoiceEffectViewModel.generate blocked: transcribed text empty")
             return
         }
 
-        Log.d("VoiceEffectViewModel", "Sending to backend → voiceId=${voice.id}, text='$textToSend'")
+        Log.d(TAG, "VoiceEffectViewModel.generate request voiceId=${voice.id}, text='$textToSend'")
 
         viewModelScope.launch {
             _generating.value = true
@@ -134,11 +138,11 @@ class VoiceEffectViewModel @Inject constructor(
                 prefix = "effect_"
             )) {
                 is Resource.Success -> {
-                    Log.d("VoiceEffectViewModel", "Generate success: ${result.data.audioUrl}")
+                    Log.d(TAG, "VoiceEffectViewModel.generate success: ${result.data.audioUrl}")
                     _generateResult.value = result.data
                 }
                 is Resource.Error -> {
-                    Log.e("VoiceEffectViewModel", "Generate error: ${result.message}")
+                    Log.e(TAG, "VoiceEffectViewModel.generate error: ${result.message}")
                     _generateError.value = result.message
                 }
                 else -> {}
@@ -166,9 +170,9 @@ class VoiceEffectViewModel @Inject constructor(
                     _isPlaying.value = false
                     _currentPosition.value = 0
                 }
-                Log.d("VoiceEffectViewModel", "MediaPlayer ready — duration=${duration}ms")
+                Log.d(TAG, "VoiceEffectViewModel.media ready duration=${duration}ms")
             } catch (e: IOException) {
-                Log.e("VoiceEffectViewModel", "MediaPlayer prepare failed: ${e.message}")
+                Log.e(TAG, "VoiceEffectViewModel.media prepare failed: ${e.message}")
             }
         }
     }
@@ -176,15 +180,18 @@ class VoiceEffectViewModel @Inject constructor(
     fun playPauseAudio() {
         val player = mediaPlayer ?: return
         if (player.isPlaying) {
+            Log.d(TAG, "VoiceEffectViewModel.playPauseAudio(): pause")
             player.pause()
             _isPlaying.value = false
         } else {
+            Log.d(TAG, "VoiceEffectViewModel.playPauseAudio(): play")
             player.start()
             _isPlaying.value = true
         }
     }
 
     fun seekTo(position: Int) {
+        Log.d(TAG, "VoiceEffectViewModel.seekTo($position)")
         mediaPlayer?.seekTo(position)
         _currentPosition.value = position
     }
@@ -204,6 +211,7 @@ class VoiceEffectViewModel @Inject constructor(
     }
 
     private fun releaseMediaPlayer() {
+        Log.d(TAG, "VoiceEffectViewModel.releaseMediaPlayer()")
         mediaPlayer?.apply {
             if (isPlaying) stop()
             release()

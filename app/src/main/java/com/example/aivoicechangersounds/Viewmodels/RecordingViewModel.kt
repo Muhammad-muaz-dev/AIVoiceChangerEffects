@@ -22,11 +22,13 @@ class RecordingViewModel @Inject constructor(
 ) : ViewModel() {
 
     companion object {
-        private const val TAG = "RecordingViewModel"
-        private const val STT_WARMUP_DELAY_MS = 350L
-        private const val STT_FINALIZATION_MAX_WAIT_MS = 2500L
-        private const val STT_FINALIZATION_STABLE_MS = 500L
-        private const val STT_FINALIZATION_POLL_MS = 100L
+        private const val TAG = "VOICE_FLOW"
+        private const val STT_WARMUP_DELAY_MS = 500L
+        private const val STT_CAPTURE_WINDOW_MS = 3000L
+        private const val RECORDING_CAPTURE_WINDOW_MS = 3000L
+        private const val STT_FINALIZATION_MAX_WAIT_MS = 3000L
+        private const val STT_FINALIZATION_STABLE_MS = 600L
+        private const val STT_FINALIZATION_POLL_MS = 150L
     }
 
     // ── State ────────────────────────────────────────────────────────────────
@@ -57,6 +59,7 @@ class RecordingViewModel @Inject constructor(
 
     private var timerJob: Job? = null
     private var amplitudeJob: Job? = null
+    private var micHandoffJob: Job? = null
     private var currentFilePath: String? = null
 
     init {
@@ -88,21 +91,18 @@ class RecordingViewModel @Inject constructor(
     private fun startRecording() {
         viewModelScope.launch {
             try {
+                Log.d(TAG, "startRecording() tapped")
                 latestTranscribedText = ""
                 _liveTranscribedText.value = ""
                 _elapsedTime.value = 0
 
-                // 1. START AUDIO FIRST (important)
                 currentFilePath = audioRecorderRepository.startRecording()
-
-                // 2. START STT IMMEDIATELY AFTER
-                speechToTextHelper.startListening(resetTranscript = true)
-
-                // 3. UPDATE STATE
+                Log.d(TAG, "Recorder started. path=$currentFilePath")
                 _recordingState.value = RecordingState.Recording
 
                 startTimer()
                 startAmplitudeUpdates()
+                startMicHandoffLoop(resetTranscript = true)
 
             } catch (e: Exception) {
                 _recordingState.value =
@@ -114,6 +114,8 @@ class RecordingViewModel @Inject constructor(
     private fun pauseRecording() {
         viewModelScope.launch {
             try {
+                Log.d(TAG, "pauseRecording() tapped")
+                stopMicHandoffLoop()
                 audioRecorderRepository.pauseRecording()
                 speechToTextHelper.stopListening()
                 waitForTranscriptToSettle()
@@ -132,16 +134,12 @@ class RecordingViewModel @Inject constructor(
     private fun resumeRecording() {
         viewModelScope.launch {
             try {
-                Log.d("hello","this ois calling in ")
-                // STT first again, then a tiny delay, then resume MediaRecorder.
-                // resetTranscript = false keeps the accumulated text.
-                speechToTextHelper.startListening(resetTranscript = false)
-                delay(STT_WARMUP_DELAY_MS)
+                Log.d(TAG, "resumeRecording() tapped")
                 audioRecorderRepository.resumeRecording()
-
                 _recordingState.value = RecordingState.Recording
                 startTimer()
                 startAmplitudeUpdates()
+                startMicHandoffLoop(resetTranscript = false)
             } catch (e: Exception) {
                 _recordingState.value =
                     RecordingState.Error(e.message ?: "Failed to resume recording")
@@ -151,8 +149,10 @@ class RecordingViewModel @Inject constructor(
 
  fun onCancelClicked() {
         viewModelScope.launch {
+            Log.d(TAG, "onCancelClicked()")
             // Cancelling means we don't care about the transcript — just tear
             // everything down immediately.
+            stopMicHandoffLoop()
             speechToTextHelper.release()
             audioRecorderRepository.cancelRecording()
             stopTimer()
@@ -166,18 +166,23 @@ class RecordingViewModel @Inject constructor(
     }
 
     fun onDoneClicked() {
-
         viewModelScope.launch {
             try {
+                Log.d(TAG, "onDoneClicked()")
+                stopMicHandoffLoop()
+
+                // Small delay to let the loop's finally/cancellation settle
+                delay(200)
+
                 val transcriptSnapshot = _liveTranscribedText.value.trim()
                 val helperSnapshotBeforeStop = speechToTextHelper.getTranscriptSnapshot()
 
                 val filePath = audioRecorderRepository.stopRecording()
-                Log.d("function called","Function is calling ")
                 speechToTextHelper.stopListening()
+
                 val finalText = waitForTranscriptToSettle(transcriptSnapshot)
                 Log.d(
-                    "finalresultbytranscribedtext",
+                    TAG,
                     "Done → filePath=$filePath, finalText='$finalText', " +
                         "uiSnapshot='$transcriptSnapshot', helperBeforeStop='$helperSnapshotBeforeStop', " +
                         "latest='$latestTranscribedText'"
@@ -186,8 +191,14 @@ class RecordingViewModel @Inject constructor(
                 stopTimer()
                 stopAmplitudeUpdates()
                 _elapsedTime.value = 0
+                if (filePath.isNullOrBlank()) {
+                    Log.e(TAG, "onDoneClicked() failed: filePath is null/blank")
+                    _recordingState.value = RecordingState.Error("Recorded file is missing. Please record again.")
+                    return@launch
+                }
+                Log.d(TAG, "onDoneClicked() success: filePath=$filePath, finalTextLen=${finalText.length}")
                 _recordingState.value = RecordingState.Done(
-                    filePath = filePath.orEmpty(),
+                    filePath = filePath,
                     transcribedText = finalText
                 )
             } catch (e: Exception) {
@@ -197,6 +208,52 @@ class RecordingViewModel @Inject constructor(
                     RecordingState.Error(e.message ?: "Failed to finish recording")
             }
         }
+    }
+
+    private fun startMicHandoffLoop(resetTranscript: Boolean) {
+        micHandoffJob?.cancel()
+        Log.d(TAG, "startMicHandoffLoop(resetTranscript=$resetTranscript)")
+        micHandoffJob = viewModelScope.launch {
+            if (!audioRecorderRepository.supportsPauseResume()) {
+                Log.w(TAG, "Pause/resume not supported on this API level; running without live STT loop")
+                return@launch
+            }
+
+            var resetAtStart = resetTranscript
+            var cycle = 0
+            while (_recordingState.value is RecordingState.Recording) {
+                try {
+                    cycle++
+                    Log.d(TAG, "Mic handoff cycle #$cycle: pause recorder -> capture STT")
+                    audioRecorderRepository.pauseRecording()
+                    speechToTextHelper.startListening(resetTranscript = resetAtStart)
+                    resetAtStart = false
+                    delay(STT_WARMUP_DELAY_MS)
+                    delay(STT_CAPTURE_WINDOW_MS)
+                    speechToTextHelper.stopListening()
+                    val settled = waitForTranscriptToSettle()
+                    Log.d(TAG, "Mic handoff cycle #$cycle: STT settled len=${settled.length}")
+                    speechToTextHelper.release()
+
+                    if (!(_recordingState.value is RecordingState.Recording)) break
+                    Log.d(TAG, "Mic handoff cycle #$cycle: resume recorder")
+                    audioRecorderRepository.resumeRecording()
+                    delay(RECORDING_CAPTURE_WINDOW_MS)
+                } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    Log.e(TAG, "Mic handoff loop failed: ${e.message}", e)
+                    _recordingState.value =
+                        RecordingState.Error(e.message ?: "Failed during recording/transcription handoff")
+                    break
+                }
+            }
+        }
+    }
+
+    private fun stopMicHandoffLoop() {
+        Log.d(TAG, "stopMicHandoffLoop()")
+        micHandoffJob?.cancel()
+        micHandoffJob = null
     }
     private suspend fun waitForTranscriptToSettle(transcriptSnapshot: String = ""): String {
         val start = System.currentTimeMillis()
@@ -274,6 +331,7 @@ class RecordingViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        stopMicHandoffLoop()
         speechToTextHelper.release()
         stopAmplitudeUpdates()
         viewModelScope.launch { audioRecorderRepository.cancelRecording() }

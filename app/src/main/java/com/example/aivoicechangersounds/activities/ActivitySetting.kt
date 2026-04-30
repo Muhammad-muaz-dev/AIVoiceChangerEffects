@@ -1,5 +1,6 @@
 package com.example.aivoicechangersounds.activities
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -8,7 +9,9 @@ import androidx.core.view.WindowInsetsCompat
 import com.voicechanger.app.R
 import com.voicechanger.app.databinding.ActivityPreviewBinding
 import com.voicechanger.app.databinding.ActivitySettingBinding
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class ActivitySetting : AppCompatActivity() {
     private lateinit var binding: ActivitySettingBinding
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,9 +25,16 @@ class ActivitySetting : AppCompatActivity() {
             insets
         }
         setUpToolbar()
+        goToLanguageChane()
     }
     private fun setUpToolbar(){
         binding.btnback.setOnClickListener { finish() }
+    }
+    private fun goToLanguageChane(){
+        binding.linearlanguage.setOnClickListener {
+            val intent= Intent(this@ActivitySetting, LanguageActivity::class.java)
+            startActivity(intent)
+        }
     }
 
 }

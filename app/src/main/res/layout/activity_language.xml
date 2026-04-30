@@ -7,6 +7,7 @@
     android:background="@android:color/transparent"
     android:clipChildren="true"
     android:clipToOutline="true"
+    android:id="@+id/main"
     android:elevation="8dp"
     android:padding="16dp">
     <androidx.constraintlayout.widget.ConstraintLayout
